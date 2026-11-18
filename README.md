@@ -2,16 +2,6 @@
 
 给 Codex 提供 skill 和 MCP。链接指向 `main` 上的最新内容。
 
-## 目录
-
-```text
-skills/<name>/SKILL.md
-skills/<name>/scripts/
-mcp/<name>/server.py
-```
-
-skill 自己的脚本放在该 skill 目录里，随 skill 一起安装。目录名就是链接最后一段，并等于 `SKILL.md` 里的 `name`。名称只用小写字母、数字和短横线。
-
 ## 链接
 
 - Skill：`https://github.com/xiaolinbenben/food4agent/skills/hello-world`
