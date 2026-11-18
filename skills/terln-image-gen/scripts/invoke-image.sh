@@ -4,6 +4,7 @@ set -euo pipefail
 
 MODEL='gpt-image-2'
 prompt=''
+api_key=''
 size='1024x1024'
 quality='auto'
 output_path=''
@@ -16,6 +17,7 @@ Usage:
   /bin/bash invoke-image.sh --prompt <text> [options]
 
 Options:
+  --api-key <value>         Required API key; not read from config
   --reference-image <path>  Local reference image; repeat up to 16 times
   --size <value>            auto or WIDTHxHEIGHT (default: 1024x1024)
   --quality <value>         auto, low, medium, or high (default: auto)
@@ -37,6 +39,11 @@ while [[ $# -gt 0 ]]; do
     --help)
       usage
       exit 0
+      ;;
+    --api-key)
+      require_value "$@"
+      api_key=$2
+      shift 2
       ;;
     --prompt)
       require_value "$@"
@@ -77,6 +84,10 @@ done
 
 if [[ -z "${prompt//[[:space:]]/}" ]]; then
   echo 'Error: --prompt must not be empty' >&2
+  exit 1
+fi
+if [[ -z "${api_key//[[:space:]]/}" ]]; then
+  echo 'Error: --api-key must not be empty' >&2
   exit 1
 fi
 if [[ ! "$size" =~ ^(auto|[0-9]{2,5}x[0-9]{2,5})$ ]]; then
@@ -160,17 +171,11 @@ JXA
 }
 
 base_url_raw=$(read_config_value 'base_url')
-api_key_raw=$(read_config_value 'experimental_bearer_token')
 if [[ -z "$base_url_raw" ]]; then
   echo "Error: Missing base_url in [model_providers.custom] of $config_path" >&2
   exit 1
 fi
-if [[ -z "$api_key_raw" ]]; then
-  echo "Error: Missing experimental_bearer_token in [model_providers.custom] of $config_path" >&2
-  exit 1
-fi
 base_url=$(decode_config_value "$base_url_raw")
-api_key=$(decode_config_value "$api_key_raw")
 case "$base_url" in
   http://*|https://*) ;;
   *)
@@ -339,6 +344,7 @@ if (( http_status < 200 || http_status >= 300 )); then
   if [[ -z "$api_error" ]]; then
     api_error=$(/usr/bin/head -c 500 "$response_file" | /usr/bin/tr '\n' ' ')
   fi
+  api_error=${api_error//"$api_key"/***}
   echo "Error: Image API request failed ($http_status): $api_error" >&2
   exit 1
 fi
@@ -349,6 +355,7 @@ elif image_url=$(/usr/bin/plutil -extract data.0.url raw -o - "$response_file" 2
   /usr/bin/curl -sS --fail --max-time "$timeout_seconds" -o "$decoded_file" "$image_url"
 else
   response_preview=$(/usr/bin/head -c 500 "$response_file" | /usr/bin/tr '\n' ' ')
+  response_preview=${response_preview//"$api_key"/***}
   echo "Error: Image API response contains neither b64_json nor url: $response_preview" >&2
   exit 1
 fi

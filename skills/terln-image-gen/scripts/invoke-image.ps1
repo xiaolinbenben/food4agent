@@ -3,6 +3,9 @@ param(
   [Parameter(Mandatory = $true)]
   [string] $Prompt,
 
+  [Parameter(Mandatory = $true)]
+  [string] $ApiKey,
+
   [ValidatePattern('^(auto|[0-9]{2,5}x[0-9]{2,5})$')]
   [string] $Size = '1024x1024',
 
@@ -58,7 +61,6 @@ function Get-CodexImageApiSettings {
 
   $currentTable = ''
   $baseUrl = ''
-  $apiKey = ''
   foreach ($rawLine in Get-Content -LiteralPath $configPath -Encoding UTF8) {
     $line = $rawLine.Trim()
     $tableMatch = [regex]::Match($line, '^\[([^\]]+)\]\s*(?:#.*)?$')
@@ -70,17 +72,12 @@ function Get-CodexImageApiSettings {
       continue
     }
 
-    $valueMatch = [regex]::Match($line, '^(base_url|experimental_bearer_token)\s*=\s*(.+?)\s*$')
+    $valueMatch = [regex]::Match($line, '^base_url\s*=\s*(.+?)\s*$')
     if (-not $valueMatch.Success) {
       continue
     }
 
-    $value = ConvertFrom-QuotedValue -Value $valueMatch.Groups[2].Value
-    if ($valueMatch.Groups[1].Value -eq 'base_url') {
-      $baseUrl = $value
-    } else {
-      $apiKey = $value
-    }
+    $baseUrl = ConvertFrom-QuotedValue -Value $valueMatch.Groups[1].Value
   }
 
   if ([string]::IsNullOrWhiteSpace($baseUrl)) {
@@ -89,13 +86,9 @@ function Get-CodexImageApiSettings {
   if ($baseUrl -notmatch '^https?://') {
     throw "Invalid base_url in [model_providers.custom] of $configPath"
   }
-  if ([string]::IsNullOrWhiteSpace($apiKey)) {
-    throw "Missing experimental_bearer_token in [model_providers.custom] of $configPath"
-  }
 
   return [pscustomobject]@{
     base_url = $baseUrl.TrimEnd('/')
-    api_key = $apiKey
   }
 }
 
@@ -240,14 +233,18 @@ function Get-ApiErrorMessage {
     [Parameter(Mandatory = $true)][int] $StatusCode
   )
 
+  $message = "Image API request failed ($StatusCode): $($Body.Substring(0, [Math]::Min(500, $Body.Length)))"
   try {
     $parsed = $Body | ConvertFrom-Json
     if ($parsed.error -and -not [string]::IsNullOrWhiteSpace([string] $parsed.error.message)) {
-      return "Image API request failed ($StatusCode): $($parsed.error.message)"
+      $message = "Image API request failed ($StatusCode): $($parsed.error.message)"
     }
   } catch {
   }
-  return "Image API request failed ($StatusCode): $($Body.Substring(0, [Math]::Min(500, $Body.Length)))"
+  if (-not [string]::IsNullOrEmpty($ApiKey)) {
+    $message = $message.Replace($ApiKey, '***')
+  }
+  return $message
 }
 
 function Send-ImageRequest {
@@ -367,11 +364,14 @@ try {
   if ([string]::IsNullOrWhiteSpace($Prompt)) {
     throw 'Prompt must not be empty'
   }
+  if ([string]::IsNullOrWhiteSpace($ApiKey)) {
+    throw 'API key must not be empty'
+  }
 
   $referenceFiles = @(Resolve-ReferenceFiles -Paths $ReferenceImage)
   $target = Resolve-OutputTarget -RequestedPath $OutputPath
   $settings = Get-CodexImageApiSettings
-  $client = New-HttpClient -ApiKey $settings.api_key -Timeout $TimeoutSeconds
+  $client = New-HttpClient -ApiKey $ApiKey.Trim() -Timeout $TimeoutSeconds
   try {
     if ($referenceFiles.Count -eq 0) {
       $operation = 'generation'
@@ -397,6 +397,10 @@ try {
   } | ConvertTo-Json -Depth 8 -Compress
   exit 0
 } catch {
-  [Console]::Error.WriteLine("Error: $($_.Exception.Message)")
+  $message = $_.Exception.Message
+  if (-not [string]::IsNullOrEmpty($ApiKey)) {
+    $message = $message.Replace($ApiKey, '***')
+  }
+  [Console]::Error.WriteLine("Error: $message")
   exit 1
 }

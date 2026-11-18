@@ -1,6 +1,6 @@
 ---
 name: terln-image-gen
-description: Generate or edit general-purpose images with gpt-image-2 using the provider credentials in the user-level Codex config file. Use when the user asks to create an image from a prompt, edit or transform one or more local reference images, compose subjects from reference images, or show an API-generated image in the ChatGPT/Codex GUI. Read base_url and experimental_bearer_token from [model_providers.custom] in ~/.codex/config.toml. Supports Windows through PowerShell and macOS through the built-in shell and system utilities, without requiring Node.js or Python.
+description: Generate or edit general-purpose images with gpt-image-2. Use when the user asks to create an image from a prompt, edit or transform one or more local reference images, compose subjects from reference images, or show an API-generated image in the ChatGPT/Codex GUI. Ask the user for the API key and pass it to the script. Read only base_url from [model_providers.custom] in ~/.codex/config.toml. Supports Windows through PowerShell and macOS through the built-in shell and system utilities, without requiring Node.js or Python.
 ---
 
 # Terln Image Gen
@@ -9,10 +9,13 @@ Generate an image from text or edit up to sixteen local reference images. Select
 
 ## Credentials And API Routing
 
-- Read `base_url` and `experimental_bearer_token` only from `[model_providers.custom]` in `~/.codex/config.toml`.
+- Ask the user for the API key before running. If this conversation does not already contain it, stop and ask. Do not guess.
+- Pass that key with macOS `--api-key` or Windows `-ApiKey`.
+- Do not read `experimental_bearer_token` or any other API key from `~/.codex/config.toml`, and do not write the key to a file.
+- Read `base_url` only from `[model_providers.custom]` in `~/.codex/config.toml`.
 - On macOS, resolve the user-level config file as `$HOME/.codex/config.toml`.
 - On Windows, resolve the user-level config file as `%USERPROFILE%\.codex\config.toml`.
-- Use `base_url` as the API base URL and `experimental_bearer_token` as the Bearer token.
+- Use `base_url` as the API base URL and the user-provided key as the Bearer token.
 - Use `gpt-image-2` and generate one image per invocation.
 - With no reference image, send JSON to `<base_url>/images/generations`.
 - With one or more reference images, send multipart form data to `<base_url>/images/edits` using repeated `image[]` fields.
@@ -45,13 +48,13 @@ Do not run the Windows script on macOS or the macOS script on Windows.
 Generate from text:
 
 ```text
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".codex\skills\terln-image-gen\scripts\invoke-image.ps1" -Prompt "A quiet lakeside cabin at blue hour, cinematic photography" -Size "1536x1024"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".codex\skills\terln-image-gen\scripts\invoke-image.ps1" -Prompt "A quiet lakeside cabin at blue hour, cinematic photography" -ApiKey "用户提供的 key" -Size "1536x1024"
 ```
 
 Edit one or more local reference images:
 
 ```text
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".codex\skills\terln-image-gen\scripts\invoke-image.ps1" -Prompt "Compose the subjects into one natural group portrait" -ReferenceImage "C:\path\person-a.png","C:\path\person-b.jpg" -Size "1536x1024" -Quality "high"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".codex\skills\terln-image-gen\scripts\invoke-image.ps1" -Prompt "Compose the subjects into one natural group portrait" -ApiKey "用户提供的 key" -ReferenceImage "C:\path\person-a.png","C:\path\person-b.jpg" -Size "1536x1024" -Quality "high"
 ```
 
 ## macOS
@@ -59,13 +62,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".codex\skills\terln-ima
 Generate from text:
 
 ```text
-/bin/bash ".codex/skills/terln-image-gen/scripts/invoke-image.sh" --prompt "A quiet lakeside cabin at blue hour, cinematic photography" --size "1536x1024"
+/bin/bash ".codex/skills/terln-image-gen/scripts/invoke-image.sh" --prompt "A quiet lakeside cabin at blue hour, cinematic photography" --api-key "用户提供的 key" --size "1536x1024"
 ```
 
 Edit one or more local reference images by repeating `--reference-image`:
 
 ```text
-/bin/bash ".codex/skills/terln-image-gen/scripts/invoke-image.sh" --prompt "Compose the subjects into one natural group portrait" --reference-image "/path/person-a.png" --reference-image "/path/person-b.jpg" --size "1536x1024" --quality "high"
+/bin/bash ".codex/skills/terln-image-gen/scripts/invoke-image.sh" --prompt "Compose the subjects into one natural group portrait" --api-key "用户提供的 key" --reference-image "/path/person-a.png" --reference-image "/path/person-b.jpg" --size "1536x1024" --quality "high"
 ```
 
 ## Parameters
@@ -73,6 +76,7 @@ Edit one or more local reference images by repeating `--reference-image`:
 Required:
 
 - Windows `-Prompt` / macOS `--prompt`: final text instruction for generation or editing.
+- Windows `-ApiKey` / macOS `--api-key`: API key supplied by the user for this run.
 
 Optional:
 
@@ -97,8 +101,9 @@ Both scripts print the same compact JSON shape on success:
 
 ## Failure Handling
 
-- If the user-level config file is missing, report its expected OS-specific path. If `base_url` or `experimental_bearer_token` is missing, report the exact field and ask the user to launch ChatGPT from the Terln assistant again so the config file is rewritten.
+- If the user has not provided an API key, ask for it and do not call the API. If the API rejects the key, report the error without the key and ask for it again.
+- If the user-level config file is missing, report its expected OS-specific path. If `base_url` is missing or invalid, report that field only.
 - If a reference file is missing or unsupported, report that exact path and do not call the API.
-- If the API returns an error, report its message without exposing credentials.
+- If the API returns an error, report its message without exposing the API key.
 - If the response contains neither `b64_json` nor `url`, report a bounded response summary and do not create a placeholder image.
 - If the output path already exists, stop instead of overwriting it.

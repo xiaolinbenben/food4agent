@@ -41,7 +41,7 @@ Fill one continuous pattern, with no collage, no grid, no contact sheet, no text
 
 ## 生成
 
-调用已安装的 `terln-image-gen`。不要换模型，也不要向用户要 key。技能不存在时停止，让用户先安装：
+调用已安装的 `terln-image-gen`。不要换模型。运行前向用户要 API key；这次对话里还没有就先停下来问。用 `--api-key` 或 `-ApiKey` 传入，不要从配置文件读取，不要写入文件，也不要在回复里打印。技能不存在时停止，让用户先安装：
 
 `https://github.com/xiaolinbenben/food4agent/skills/terln-image-gen`
 
@@ -50,13 +50,13 @@ Fill one continuous pattern, with no collage, no grid, no contact sheet, no text
 macOS 每张重复一次 `--reference-image`：
 
 ```text
-/bin/bash "$HOME/.codex/skills/terln-image-gen/scripts/invoke-image.sh" --prompt "最终英文提示词" --reference-image "/绝对路径/印花1" --reference-image "/绝对路径/印花2" --size "1024x1024" --quality "medium" --output "/绝对路径/.codex/generated-images/print-fission/01.png"
+/bin/bash "$HOME/.codex/skills/terln-image-gen/scripts/invoke-image.sh" --prompt "最终英文提示词" --api-key "用户提供的 key" --reference-image "/绝对路径/印花1" --reference-image "/绝对路径/印花2" --size "1024x1024" --quality "medium" --output "/绝对路径/.codex/generated-images/print-fission/01.png"
 ```
 
 Windows：
 
 ```text
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\skills\terln-image-gen\scripts\invoke-image.ps1" -Prompt "最终英文提示词" -ReferenceImage "C:\绝对路径\印花1","C:\绝对路径\印花2" -Size "1024x1024" -Quality "medium" -OutputPath "C:\绝对路径\.codex\generated-images\print-fission\01.png"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\skills\terln-image-gen\scripts\invoke-image.ps1" -Prompt "最终英文提示词" -ApiKey "用户提供的 key" -ReferenceImage "C:\绝对路径\印花1","C:\绝对路径\印花2" -Size "1024x1024" -Quality "medium" -OutputPath "C:\绝对路径\.codex\generated-images\print-fission\01.png"
 ```
 
 成功后读取该次 JSON 的 `saved_files[0]`。某一张失败就停在这一张。
