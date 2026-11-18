@@ -1,109 +1,26 @@
 ---
 name: terln-image-gen
-description: Generate or edit general-purpose images with gpt-image-2. Use when the user asks to create an image from a prompt, edit or transform one or more local reference images, compose subjects from reference images, or show an API-generated image in the ChatGPT/Codex GUI. Ask the user for the API key and pass it to the script. Read only base_url from [model_providers.custom] in ~/.codex/config.toml. Supports Windows through PowerShell and macOS through the built-in shell and system utilities, without requiring Node.js or Python.
+description: 用 gpt-image-2 生成或编辑图片。用户要生图、改图、用参考图合成，或在对话里看生成结果时使用。先向用户要 API key，再运行脚本。
 ---
 
 # Terln Image Gen
 
-Generate an image from text or edit up to sixteen local reference images. Select the bundled Windows or macOS implementation, save the result locally, and render it in the chat response.
+向用户要 API key，再按当前系统运行脚本。每次一张。把结果里的图片 Markdown 贴到回复中。
 
-## Credentials And API Routing
-
-- Ask the user for the API key before running. If this conversation does not already contain it, stop and ask. Do not guess.
-- Pass that key with macOS `--api-key` or Windows `-ApiKey`.
-- Do not read `experimental_bearer_token` or any other API key from `~/.codex/config.toml`, and do not write the key to a file.
-- Read `base_url` only from `[model_providers.custom]` in `~/.codex/config.toml`.
-- On macOS, resolve the user-level config file as `$HOME/.codex/config.toml`.
-- On Windows, resolve the user-level config file as `%USERPROFILE%\.codex\config.toml`.
-- Use `base_url` as the API base URL and the user-provided key as the Bearer token.
-- Use `gpt-image-2` and generate one image per invocation.
-- With no reference image, send JSON to `<base_url>/images/generations`.
-- With one or more reference images, send multipart form data to `<base_url>/images/edits` using repeated `image[]` fields.
-- Accept local reference files only. Do not silently switch to URL-based or provider-specific edit request shapes.
-- Always save the returned image to a local file. Never leave a base64 result only in terminal output.
-- Never print the API key or include it in result JSON, errors, or chat output.
-- Do not require Node.js, Python, jq, Homebrew, Git Bash, or WSL.
-
-## Select The Platform Script
-
-Inspect the current OS before running a command:
-
-- On Windows, run `scripts\invoke-image.ps1` with `powershell.exe`.
-- On macOS, run `scripts/invoke-image.sh` with `/bin/bash`.
-- On any other OS, stop and report that the skill supports Windows and macOS only.
-
-Do not run the Windows script on macOS or the macOS script on Windows.
-
-## Workflow
-
-1. Resolve the user's final prompt. For edits, make the intended changes and the elements to preserve explicit.
-2. Resolve every reference image to an existing local file path. If a required chat attachment has no accessible local path, ask the user to attach or provide the file again.
-3. Select and run the script for the current OS.
-4. Read the JSON result and use `saved_files[0]` as the source of truth.
-5. Inspect the saved image when an image-viewing tool is available.
-6. In the final response, emit `display_markdown[0]` as actual Markdown so the generated image is visible in the ChatGPT/Codex GUI. Do not return only a path, URL, or fenced JSON block.
-
-## Windows
-
-Generate from text:
+macOS：
 
 ```text
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".codex\skills\terln-image-gen\scripts\invoke-image.ps1" -Prompt "A quiet lakeside cabin at blue hour, cinematic photography" -ApiKey "用户提供的 key" -Size "1536x1024"
+/bin/bash "$HOME/.codex/skills/terln-image-gen/scripts/invoke-image.sh" --prompt "提示词" --api-key "用户提供的 key"
 ```
 
-Edit one or more local reference images:
+有参考图时重复 `--reference-image`。
+
+Windows：
 
 ```text
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".codex\skills\terln-image-gen\scripts\invoke-image.ps1" -Prompt "Compose the subjects into one natural group portrait" -ApiKey "用户提供的 key" -ReferenceImage "C:\path\person-a.png","C:\path\person-b.jpg" -Size "1536x1024" -Quality "high"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\skills\terln-image-gen\scripts\invoke-image.ps1" -Prompt "提示词" -ApiKey "用户提供的 key"
 ```
 
-## macOS
+有参考图时用 `-ReferenceImage`，多个路径用逗号分隔。
 
-Generate from text:
-
-```text
-/bin/bash ".codex/skills/terln-image-gen/scripts/invoke-image.sh" --prompt "A quiet lakeside cabin at blue hour, cinematic photography" --api-key "用户提供的 key" --size "1536x1024"
-```
-
-Edit one or more local reference images by repeating `--reference-image`:
-
-```text
-/bin/bash ".codex/skills/terln-image-gen/scripts/invoke-image.sh" --prompt "Compose the subjects into one natural group portrait" --api-key "用户提供的 key" --reference-image "/path/person-a.png" --reference-image "/path/person-b.jpg" --size "1536x1024" --quality "high"
-```
-
-## Parameters
-
-Required:
-
-- Windows `-Prompt` / macOS `--prompt`: final text instruction for generation or editing.
-- Windows `-ApiKey` / macOS `--api-key`: API key supplied by the user for this run.
-
-Optional:
-
-- Windows `-ReferenceImage`: one to sixteen local PNG, JPEG, or WebP files, passed as comma-separated quoted values after one parameter. macOS `--reference-image`: repeat the option for each file. Supplying any reference selects edit mode.
-- Windows `-Size` / macOS `--size`: `auto` or a `WIDTHxHEIGHT` string. Default `1024x1024`.
-- Windows `-Quality` / macOS `--quality`: `auto`, `low`, `medium`, or `high`. Default `auto`.
-- Windows `-OutputPath` / macOS `--output`: destination `.png`, `.jpg`, `.jpeg`, or `.webp` path. If omitted, save a unique PNG under `.codex/generated-images/` in the current workspace.
-- Windows `-TimeoutSeconds` / macOS `--timeout-seconds`: request timeout. Default 300 seconds.
-
-Both scripts print the same compact JSON shape on success:
-
-```json
-{
-  "status": "completed",
-  "operation": "generation",
-  "model": "gpt-image-2",
-  "size": "1024x1024",
-  "saved_files": ["/absolute/path/generated.png"],
-  "display_markdown": ["![Generated image](</absolute/path/generated.png>)"]
-}
-```
-
-## Failure Handling
-
-- If the user has not provided an API key, ask for it and do not call the API. If the API rejects the key, report the error without the key and ask for it again.
-- If the user-level config file is missing, report its expected OS-specific path. If `base_url` is missing or invalid, report that field only.
-- If a reference file is missing or unsupported, report that exact path and do not call the API.
-- If the API returns an error, report its message without exposing the API key.
-- If the response contains neither `b64_json` nor `url`, report a bounded response summary and do not create a placeholder image.
-- If the output path already exists, stop instead of overwriting it.
+可选：`--size` / `-Size`，`--quality` / `-Quality`，`--output` / `-OutputPath`。成功后使用 `saved_files[0]`。

@@ -1,21 +1,11 @@
 ---
 name: get-amazon-image
-description: Get Amazon product images for an ASIN or Amazon product URL and save the files locally. Use when the user asks to get amazon image, Amazon listing photos, product images, or pictures from an Amazon page. Ask the user for the API key and pass it with --api-key. Do not read ~/.food4agent or any local credential file.
+description: 获取 Amazon 商品图片并保存到本地。用户要 get amazon image、商品图或 Amazon 页面图片时使用。先向用户要 API key，再运行脚本。
 ---
 
 # Get Amazon Image
 
-获取一个 Amazon 商品的图片，并保存到本地。
-
-## API key
-
-运行前向用户要 API key。这次对话里还没有 key 时，先停下来问，不要猜。
-
-不要读取 `~/.food4agent`，也不要读取其他本地凭证文件。不要把 key 写入文件。不要在回复、命令回显或结果里打印 key。
-
-## 运行
-
-在当前工作目录执行这个 skill 自带的脚本。二选一：
+向用户要 API key，再运行脚本。把结果里的图片 Markdown 贴到回复中。
 
 ```bash
 python3 scripts/save_images.py --asin B0EXAMPLE0 --api-key "用户提供的 key"
@@ -25,11 +15,4 @@ python3 scripts/save_images.py --asin B0EXAMPLE0 --api-key "用户提供的 key"
 python3 scripts/save_images.py --url "https://www.amazon.com/dp/B0EXAMPLE0" --api-key "用户提供的 key"
 ```
 
-可选参数：
-
-- `--amazon-domain`：默认 `amazon.com`。只在使用 `--asin` 时生效。
-- `--output`：保存目录。不传时写入当前目录的 `.codex/generated-images/amazon-images/`。
-
-成功时，脚本向标准输出打印一行 JSON。把 `saved_files` 当作本地文件路径。最终回复里输出 `display_markdown` 中的图片 Markdown，不要只给路径。
-
-key 无效或请求失败时，转告错误信息，并再向用户要一次 key。
+可选：`--amazon-domain`，`--output`。成功后使用 `saved_files[0]`。
