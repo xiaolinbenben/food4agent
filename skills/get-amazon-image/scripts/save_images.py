@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Download Amazon product images through food4agent and save them locally."""
+"""Download Amazon product images through Rainforest API and save them locally."""
 
 import argparse
 import json
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -22,9 +23,8 @@ class RejectNonHttps(urllib.request.HTTPRedirectHandler):
 
 OPENER = urllib.request.build_opener(RejectNonHttps)
 
-API_URL = "https://api.food4agent.com/v1/rainforest/product-images"
-AUTHORIZE_URL = "https://food4agent.com/authorize"
-USER_AGENT = "food4agent-amazon-images"
+API_URL = "https://api.rainforestapi.com/request"
+USER_AGENT = "get-amazon-image"
 MAX_IMAGES = 30
 MAX_BYTES = 15 * 1024 * 1024
 ASIN_RE = re.compile(r"^[A-Z0-9]{10}$")
@@ -37,22 +37,10 @@ def fail(message):
     raise SystemExit(1)
 
 
-def credentials_path():
-    return Path.home() / ".food4agent" / "credentials.json"
-
-
-def load_token():
-    path = credentials_path()
-    if not path.is_file():
-        fail("未登录 food4agent。打开 %s 完成授权，不要配置供应商 key。" % AUTHORIZE_URL)
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        fail("无法读取 %s。打开 %s 重新授权。" % (path, AUTHORIZE_URL))
-    token = data.get("access_token") if isinstance(data, dict) else None
-    if not isinstance(token, str) or not token.strip():
-        fail("未登录 food4agent。打开 %s 完成授权，不要配置供应商 key。" % AUTHORIZE_URL)
-    return token.strip()
+def redact(text, api_key):
+    if not api_key:
+        return text
+    return text.replace(api_key, "***")
 
 
 def asin_from_url(url):
@@ -63,12 +51,15 @@ def asin_from_url(url):
 
 
 def parse_args(argv):
-    parser = argparse.ArgumentParser(description="通过 food4agent 下载 Amazon 商品图片")
+    parser = argparse.ArgumentParser(description="通过 Rainforest API 下载 Amazon 商品图片")
+    parser.add_argument("--api-key", required=True, help="Rainforest API key")
     parser.add_argument("--asin", help="10 位 ASIN")
     parser.add_argument("--url", help="Amazon 商品页 URL")
     parser.add_argument("--amazon-domain", default="amazon.com")
     parser.add_argument("--output", help="保存目录")
     args = parser.parse_args(argv)
+    if not args.api_key.strip():
+        fail("--api-key 不能为空。")
     has_asin = bool(args.asin)
     has_url = bool(args.url)
     if has_asin == has_url:
@@ -77,7 +68,7 @@ def parse_args(argv):
         if not args.url.startswith("https://") or " " in args.url:
             fail("--url 必须是 https 链接。")
         label = asin_from_url(args.url)
-        payload = {"type": "product", "url": args.url}
+        params = {"type": "product", "url": args.url}
     else:
         asin = args.asin.strip().upper()
         if not ASIN_RE.fullmatch(asin):
@@ -86,53 +77,66 @@ def parse_args(argv):
         if not DOMAIN_RE.fullmatch(domain):
             fail("--amazon-domain 不合法。")
         label = asin
-        payload = {"type": "product", "asin": asin, "amazon_domain": domain}
-    return args, payload, label
+        params = {"type": "product", "asin": asin, "amazon_domain": domain}
+    return args, params, label
 
 
-def request_json(url, payload, token):
+def request_product(api_key, params):
+    query = urllib.parse.urlencode({"api_key": api_key, **params})
     request = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": "Bearer %s" % token,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "User-Agent": USER_AGENT,
-        },
-        method="POST",
+        "%s?%s" % (API_URL, query),
+        headers={"Accept": "application/json", "User-Agent": USER_AGENT},
     )
     try:
-        with OPENER.open(request, timeout=60) as response:
+        with OPENER.open(request, timeout=90) as response:
             raw = response.read()
     except urllib.error.HTTPError as exc:
-        if exc.code in (401, 403):
-            fail("food4agent 授权无效或已过期。打开 %s 重新登录。" % AUTHORIZE_URL)
-        detail = exc.read().decode("utf-8", "replace")[:300].replace(token, "***")
-        fail("food4agent 请求失败：HTTP %s %s" % (exc.code, detail))
+        detail = redact(exc.read().decode("utf-8", "replace")[:300], api_key)
+        fail("Rainforest 请求失败：HTTP %s %s" % (exc.code, detail))
     except urllib.error.URLError as exc:
-        fail("无法连接 food4agent：%s" % exc.reason)
+        fail("无法连接 Rainforest：%s" % exc.reason)
     try:
         body = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError):
-        fail("food4agent 没有返回 JSON。")
-    if not isinstance(body, dict) or not isinstance(body.get("images"), list):
-        fail("food4agent 响应缺少 images。")
-    return body
+        fail("Rainforest 没有返回 JSON。")
+    if not isinstance(body, dict):
+        fail("Rainforest 响应无法识别。")
+    info = body.get("request_info")
+    if not isinstance(info, dict) or info.get("success") is not True:
+        message = info.get("message") if isinstance(info, dict) else ""
+        if not isinstance(message, str) or not message.strip():
+            message = "Rainforest 请求失败。"
+        fail(redact(message, api_key))
+    product = body.get("product")
+    if not isinstance(product, dict):
+        fail("Rainforest 响应缺少 product。")
+    return product
 
 
-def image_entries(body):
+def add_image(entries, seen, item):
+    if not isinstance(item, dict):
+        return
+    link = item.get("link")
+    if not isinstance(link, str) or not link.startswith("https://") or link in seen:
+        return
+    variant = item.get("variant", "")
+    if not isinstance(variant, str):
+        fail("图片 variant 不合法。")
+    seen.add(link)
+    entries.append((link, VARIANT_RE.sub("", variant)[:32]))
+
+
+def image_entries(product):
     entries = []
-    for item in body["images"]:
-        if not isinstance(item, dict):
-            fail("food4agent 返回了无法识别的图片。")
-        url = item.get("url")
-        if not isinstance(url, str) or not url.startswith("https://"):
-            fail("图片地址必须是 https。")
-        variant = item.get("variant", "")
-        if not isinstance(variant, str):
-            fail("图片 variant 不合法。")
-        entries.append((url, VARIANT_RE.sub("", variant)[:32]))
+    seen = set()
+    add_image(entries, seen, product.get("main_image"))
+    images = product.get("images")
+    if images is None:
+        images = []
+    if not isinstance(images, list):
+        fail("Rainforest 响应里的 images 无法识别。")
+    for item in images:
+        add_image(entries, seen, item)
     if not entries:
         fail("这个商品没有返回图片。")
     if len(entries) > MAX_IMAGES:
@@ -203,10 +207,9 @@ def save_all(entries, directory):
 
 
 def main(argv):
-    args, payload, label = parse_args(argv)
-    token = load_token()
-    body = request_json(API_URL, payload, token)
-    saved = save_all(image_entries(body), output_dir(args, label))
+    args, params, label = parse_args(argv)
+    product = request_product(args.api_key.strip(), params)
+    saved = save_all(image_entries(product), output_dir(args, label))
     markdown = ["![Amazon image](<%s>)" % path.as_posix() for path in saved]
     print(json.dumps({
         "status": "completed",
