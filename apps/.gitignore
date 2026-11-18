@@ -1,0 +1,14 @@
+node_modules/
+server/web/dist/public/*
+!server/web/dist/public/.gitkeep
+server/web/dist/admin/*
+!server/web/dist/admin/.gitkeep
+server/bin/
+deploy/.env
+.env
+.DS_Store
+*.tsbuildinfo
+server/data/
+*.db
+*.db-wal
+*.db-shm

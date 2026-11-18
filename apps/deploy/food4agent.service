@@ -1,0 +1,13 @@
+[Unit]
+Description=food4agent
+After=network.target
+
+[Service]
+WorkingDirectory=__DIR__
+EnvironmentFile=__DIR__/env
+ExecStart=__DIR__/food4agent
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
