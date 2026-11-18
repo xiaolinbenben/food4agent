@@ -6,6 +6,7 @@
 
 - Skill：`https://github.com/xiaolinbenben/food4agent/skills/hello-world`
 - Skill：`https://github.com/xiaolinbenben/food4agent/skills/terln-image-gen`
+- Skill：`https://github.com/xiaolinbenben/food4agent/skills/print-fission`
 - MCP：`https://github.com/xiaolinbenben/food4agent/mcp/hello-world`
 
 把 skill 链接发给 Codex 即可安装，安装位置是 `~/.codex/skills/<name>`。同一个链接再次安装前，先删除已有的同名目录。
@@ -25,6 +26,7 @@ enabled = true
 
 - `skills/hello-world`：运行 `scripts/hello.py`，输出 `hello world`。
 - `skills/terln-image-gen`：用 `gpt-image-2` 生成或编辑图片。
+- `skills/print-fission`：先读取印花的共同元素，再改写风格与细节，逐张裂变。
 - `mcp/hello-world`：提供 `hello_world` 工具，返回 `hello world`。
 
 自定义域名还没有接。
