@@ -6,6 +6,7 @@
 
 - Skill：`https://github.com/xiaolinbenben/food4agent/skills/hello-world`
 - Skill：`https://github.com/xiaolinbenben/food4agent/skills/terln-image-gen`
+- Skill：`https://github.com/xiaolinbenben/food4agent/skills/get-amazon-image`
 - Skill：`https://github.com/xiaolinbenben/food4agent/skills/print-fission`
 - MCP：`https://github.com/xiaolinbenben/food4agent/mcp/hello-world`
 
@@ -26,6 +27,7 @@ enabled = true
 
 - `skills/hello-world`：运行 `scripts/hello.py`，输出 `hello world`。
 - `skills/terln-image-gen`：用 `gpt-image-2` 生成或编辑图片。
+- `skills/get-amazon-image`：获取 Amazon 商品图，并保存到本地。
 - `skills/print-fission`：先读取印花的共同元素，再改写风格与细节，逐张裂变。
 - `mcp/hello-world`：提供 `hello_world` 工具，返回 `hello world`。
 
