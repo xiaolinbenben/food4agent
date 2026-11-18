@@ -5,7 +5,7 @@ description: 获取 Amazon 商品图片并保存到本地。用户要 get amazon
 
 # Get Amazon Image
 
-向用户要 API key，再运行脚本。把结果里的图片 Markdown 贴到回复中。
+向用户要 API key。在这个 skill 目录里运行脚本。把结果里的图片 Markdown 贴到回复中。
 
 ```bash
 python3 scripts/save_images.py --asin B0EXAMPLE0 --api-key "用户提供的 key"

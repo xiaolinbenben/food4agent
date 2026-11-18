@@ -116,108 +116,14 @@ if (( ${#references[@]} > 16 )); then
   exit 1
 fi
 
-for required_command in /usr/bin/curl /usr/bin/awk /usr/bin/osascript /usr/bin/plutil /usr/bin/base64 /usr/bin/mktemp /usr/bin/uuidgen; do
+for required_command in /usr/bin/curl /usr/bin/osascript /usr/bin/plutil /usr/bin/base64 /usr/bin/mktemp /usr/bin/uuidgen; do
   if [[ ! -x "$required_command" ]]; then
     echo "Error: Missing required macOS system utility: $required_command" >&2
     exit 1
   fi
 done
 
-config_path="$HOME/.codex/config.toml"
-if [[ ! -f "$config_path" ]]; then
-  echo "Error: Missing Codex config: $config_path" >&2
-  exit 1
-fi
-
-read_config_value() {
-  local key=$1
-  /usr/bin/awk -v wanted="$key" '
-    /^[[:space:]]*\[[^]]+\][[:space:]]*$/ {
-      table = $0
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", table)
-      in_custom = (table == "[model_providers.custom]")
-      next
-    }
-    in_custom {
-      line = $0
-      if (line ~ "^[[:space:]]*" wanted "[[:space:]]*=") {
-        sub("^[[:space:]]*" wanted "[[:space:]]*=[[:space:]]*", "", line)
-        print line
-        exit
-      }
-    }
-  ' "$config_path"
-}
-
-decode_config_value() {
-  local raw=$1
-  case "$raw" in
-    \"*\")
-      /usr/bin/osascript -l JavaScript - "$raw" <<'JXA'
-function run(argv) {
-  return JSON.parse(argv[0]);
-}
-JXA
-      ;;
-    \'*\')
-      raw=${raw#\'}
-      raw=${raw%\'}
-      printf '%s\n' "$raw"
-      ;;
-    *)
-      printf '%s\n' "$raw"
-      ;;
-  esac
-}
-
-base_url_raw=$(read_config_value 'base_url')
-if [[ -z "$base_url_raw" ]]; then
-  echo "Error: Missing base_url in [model_providers.custom] of $config_path" >&2
-  exit 1
-fi
-base_url=$(decode_config_value "$base_url_raw")
-case "$base_url" in
-  http://*|https://*) ;;
-  *)
-    echo "Error: Invalid base_url in [model_providers.custom] of $config_path" >&2
-    exit 1
-    ;;
-esac
-base_url=${base_url%/}
-
-load_codex_proxy() {
-  local key value line
-  for key in HTTPS_PROXY https_proxy HTTP_PROXY http_proxy ALL_PROXY all_proxy; do
-    value=$(/usr/bin/printenv "$key" 2>/dev/null || true)
-    if [[ -n "$value" ]]; then
-      return
-    fi
-  done
-
-  local env_path="$HOME/.codex/.env"
-  [[ -f "$env_path" ]] || return
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    line=${line#export }
-    [[ "$line" == *=* ]] || continue
-    key=${line%%=*}
-    value=${line#*=}
-    key=$(printf '%s' "$key" | /usr/bin/sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    value=$(printf '%s' "$value" | /usr/bin/sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    case "$value" in
-      \"*\") value=${value#\"}; value=${value%\"} ;;
-      \'*\') value=${value#\'}; value=${value%\'} ;;
-    esac
-    case "$key" in
-      HTTPS_PROXY|https_proxy|HTTP_PROXY|http_proxy|ALL_PROXY|all_proxy)
-        if [[ -n "$value" ]]; then
-          export "$key=$value"
-        fi
-        ;;
-    esac
-  done < "$env_path"
-}
-
-load_codex_proxy
+base_url='https://api.terln.com/v1'
 
 resolved_references=()
 for reference in ${references[@]+"${references[@]}"}; do
@@ -244,7 +150,7 @@ for reference in ${references[@]+"${references[@]}"}; do
 done
 
 if [[ -z "$output_path" ]]; then
-  output_dir="$PWD/.codex/generated-images"
+  output_dir="$PWD/generated-images"
   /bin/mkdir -p "$output_dir"
   short_id=$(/usr/bin/uuidgen | /usr/bin/tr -d '-' | /usr/bin/cut -c1-8)
   output_path="$output_dir/$(/bin/date '+%Y%m%d-%H%M%S')-$short_id.png"

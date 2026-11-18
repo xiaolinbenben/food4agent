@@ -182,7 +182,7 @@ def output_dir(args, label):
             fail("输出目录已存在且不为空：%s" % path)
         return path
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    return Path.cwd() / ".codex" / "generated-images" / "amazon-images" / label / stamp
+    return Path.cwd() / "generated-images" / "amazon-images" / label / stamp
 
 
 def save_all(entries, directory):

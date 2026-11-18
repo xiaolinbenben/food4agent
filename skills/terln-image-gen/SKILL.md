@@ -5,12 +5,12 @@ description: 用 gpt-image-2 生成或编辑图片。用户要生图、改图、
 
 # Terln Image Gen
 
-向用户要 API key，再按当前系统运行脚本。每次一张。把结果里的图片 Markdown 贴到回复中。
+向用户要 API key。在这个 skill 目录里运行脚本，每次一张。把结果里的图片 Markdown 贴到回复中。
 
 macOS：
 
 ```text
-/bin/bash "$HOME/.codex/skills/terln-image-gen/scripts/invoke-image.sh" --prompt "提示词" --api-key "用户提供的 key"
+/bin/bash scripts/invoke-image.sh --prompt "提示词" --api-key "用户提供的 key"
 ```
 
 有参考图时重复 `--reference-image`。
@@ -18,7 +18,7 @@ macOS：
 Windows：
 
 ```text
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\skills\terln-image-gen\scripts\invoke-image.ps1" -Prompt "提示词" -ApiKey "用户提供的 key"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/invoke-image.ps1 -Prompt "提示词" -ApiKey "用户提供的 key"
 ```
 
 有参考图时用 `-ReferenceImage`，多个路径用逗号分隔。

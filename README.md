@@ -1,6 +1,6 @@
 # food4agent
 
-给 Codex 提供 skill 和 MCP。链接指向 `main` 上的最新内容。
+给 agent 提供 skill 和 MCP。链接指向 `main` 上的最新内容。
 
 ## 授权
 
@@ -18,17 +18,14 @@
 - Skill：`https://github.com/xiaolinbenben/food4agent/skills/print-fission`
 - MCP：`https://github.com/xiaolinbenben/food4agent/mcp/hello-world`
 
-把 skill 链接发给 Codex 即可安装，安装位置是 `~/.codex/skills/<name>`。同一个链接再次安装前，先删除已有的同名目录。
+把 skill 链接发给 agent 即可安装，安装到当前工作目录的 `skills/<name>`。不要装到用户主目录或其他位置。同一个链接再次安装前，先删除已有的同名目录。
 
-MCP 把 `server.py` 写入 `~/.codex/config.toml`。`cwd` 指向上面的目录；仓库更新后重启 Codex。
+MCP 由 agent 以 stdio 启动 `server.py`。工作目录是 `mcp/hello-world`。仓库更新后重启 agent。
 
-```toml
-[mcp_servers.hello-world]
-type = "stdio"
-command = "python3"
-args = ["server.py"]
-cwd = "/你的路径/food4agent/mcp/hello-world"
-enabled = true
+```text
+command: python3
+args: server.py
+cwd: /你的路径/food4agent/mcp/hello-world
 ```
 
 ## 现有内容

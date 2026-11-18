@@ -29,93 +29,11 @@ $ProxyEnvKeys = @('HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'ALL
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 Add-Type -AssemblyName System.Net.Http
 
-function ConvertFrom-QuotedValue {
-  param([Parameter(Mandatory = $true)][string] $Value)
-
-  $trimmed = $Value.Trim()
-  if ($trimmed.StartsWith('"') -and $trimmed.EndsWith('"')) {
-    return ($trimmed | ConvertFrom-Json)
-  }
-  if ($trimmed.StartsWith("'") -and $trimmed.EndsWith("'")) {
-    return $trimmed.Substring(1, $trimmed.Length - 2)
-  }
-  return $trimmed
-}
-
-function Get-UserProfileDirectory {
-  $profileDirectory = [Environment]::GetEnvironmentVariable('USERPROFILE')
-  if ([string]::IsNullOrWhiteSpace($profileDirectory)) {
-    $profileDirectory = [Environment]::GetFolderPath('UserProfile')
-  }
-  if ([string]::IsNullOrWhiteSpace($profileDirectory)) {
-    throw 'Cannot resolve the current user profile directory'
-  }
-  return $profileDirectory
-}
-
-function Get-CodexImageApiSettings {
-  $configPath = Join-Path (Get-UserProfileDirectory) '.codex\config.toml'
-  if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) {
-    throw "Missing Codex config: $configPath"
-  }
-
-  $currentTable = ''
-  $baseUrl = ''
-  foreach ($rawLine in Get-Content -LiteralPath $configPath -Encoding UTF8) {
-    $line = $rawLine.Trim()
-    $tableMatch = [regex]::Match($line, '^\[([^\]]+)\]\s*(?:#.*)?$')
-    if ($tableMatch.Success) {
-      $currentTable = $tableMatch.Groups[1].Value
-      continue
-    }
-    if ($currentTable -ne 'model_providers.custom' -or -not $line -or $line.StartsWith('#')) {
-      continue
-    }
-
-    $valueMatch = [regex]::Match($line, '^base_url\s*=\s*(.+?)\s*$')
-    if (-not $valueMatch.Success) {
-      continue
-    }
-
-    $baseUrl = ConvertFrom-QuotedValue -Value $valueMatch.Groups[1].Value
-  }
-
-  if ([string]::IsNullOrWhiteSpace($baseUrl)) {
-    throw "Missing base_url in [model_providers.custom] of $configPath"
-  }
-  if ($baseUrl -notmatch '^https?://') {
-    throw "Invalid base_url in [model_providers.custom] of $configPath"
-  }
-
-  return [pscustomobject]@{
-    base_url = $baseUrl.TrimEnd('/')
-  }
-}
-
 function Get-ProxyUrl {
   foreach ($key in $ProxyEnvKeys) {
     $value = [Environment]::GetEnvironmentVariable($key)
     if (-not [string]::IsNullOrWhiteSpace($value)) {
       return $value.Trim()
-    }
-  }
-
-  $envPath = Join-Path (Get-UserProfileDirectory) '.codex\.env'
-  if (-not (Test-Path -LiteralPath $envPath -PathType Leaf)) {
-    return $null
-  }
-
-  $values = @{}
-  foreach ($rawLine in Get-Content -LiteralPath $envPath -Encoding UTF8) {
-    $match = [regex]::Match($rawLine, '^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$')
-    if ($match.Success) {
-      $values[$match.Groups[1].Value] = ConvertFrom-QuotedValue -Value $match.Groups[2].Value
-    }
-  }
-
-  foreach ($key in $ProxyEnvKeys) {
-    if ($values.ContainsKey($key) -and -not [string]::IsNullOrWhiteSpace([string] $values[$key])) {
-      return [string] $values[$key]
     }
   }
   return $null
@@ -185,7 +103,7 @@ function Resolve-OutputTarget {
   param([string] $RequestedPath)
 
   if ([string]::IsNullOrWhiteSpace($RequestedPath)) {
-    $outputDirectory = Join-Path (Get-Location) '.codex\generated-images'
+    $outputDirectory = Join-Path (Get-Location) 'generated-images'
     $fileName = '{0}-{1}.png' -f (Get-Date -Format 'yyyyMMdd-HHmmss'), ([Guid]::NewGuid().ToString('N').Substring(0, 8))
     $fullPath = Join-Path $outputDirectory $fileName
   } else {
@@ -370,15 +288,15 @@ try {
 
   $referenceFiles = @(Resolve-ReferenceFiles -Paths $ReferenceImage)
   $target = Resolve-OutputTarget -RequestedPath $OutputPath
-  $settings = Get-CodexImageApiSettings
+  $baseUrl = 'https://api.terln.com/v1'
   $client = New-HttpClient -ApiKey $ApiKey.Trim() -Timeout $TimeoutSeconds
   try {
     if ($referenceFiles.Count -eq 0) {
       $operation = 'generation'
-      $body = Invoke-Generation -Client $client -Url "$($settings.base_url)/images/generations" -OutputFormat $target.format
+      $body = Invoke-Generation -Client $client -Url "$baseUrl/images/generations" -OutputFormat $target.format
     } else {
       $operation = 'edit'
-      $body = Invoke-Edit -Client $client -Url "$($settings.base_url)/images/edits" -ReferenceFiles $referenceFiles -OutputFormat $target.format
+      $body = Invoke-Edit -Client $client -Url "$baseUrl/images/edits" -ReferenceFiles $referenceFiles -OutputFormat $target.format
     }
   } finally {
     $client.Dispose()
