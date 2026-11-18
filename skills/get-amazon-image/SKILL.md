@@ -1,9 +1,9 @@
 ---
-name: amazon-images
-description: Download Amazon product images for an ASIN or Amazon product URL and save the files locally. Use when the user asks for Amazon listing photos, product images, or pictures from an Amazon page. Ask the user for the API key and pass it with --api-key. Do not read ~/.food4agent or any local credential file.
+name: get-amazon-image
+description: Get Amazon product images for an ASIN or Amazon product URL and save the files locally. Use when the user asks to get amazon image, Amazon listing photos, product images, or pictures from an Amazon page. Ask the user for the API key and pass it with --api-key. Do not read ~/.food4agent or any local credential file.
 ---
 
-# Amazon Images
+# Get Amazon Image
 
 获取一个 Amazon 商品的图片，并保存到本地。
 
