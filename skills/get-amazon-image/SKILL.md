@@ -10,7 +10,7 @@ description: 获取 Amazon 商品图片并保存到本地。用户要 get amazon
 ```bash
 python3 scripts/save_images.py --asin B0EXAMPLE0 --api-key "用户提供的 key"
 ```
-
+scm-history-item:/Users/xiaolinbenben/Documents/food4agent?%7B%22repositoryId%22%3A%22scm0%22%2C%22historyItemId%22%3A%2241002b964803dc748bd1e455a5b214524e41336b%22%2C%22historyItemParentId%22%3A%226d20dd48554b309c373fc29f6ceac10d90ec7aa2%22%2C%22historyItemDisplayId%22%3A%2241002b9%22%7D
 ```bash
 python3 scripts/save_images.py --url "https://www.amazon.com/dp/B0EXAMPLE0" --api-key "用户提供的 key"
 ```
