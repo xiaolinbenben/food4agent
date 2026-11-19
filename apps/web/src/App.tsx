@@ -160,7 +160,63 @@ function Home() {
   );
 }
 
+const catalogPageSize = 20;
+
+function requestedPage() {
+  const raw = new URLSearchParams(window.location.search).get("page");
+  if (!raw || !/^[1-9]\d*$/.test(raw)) return 1;
+  const page = Number(raw);
+  return Number.isSafeInteger(page) ? page : 1;
+}
+
+function catalogHref(pathname: string, page: number) {
+  return page <= 1 ? pathname : `${pathname}?page=${page}`;
+}
+
+function pageSlice<T>(items: readonly T[], requested: number) {
+  const total = items.length;
+  const pageCount = Math.max(1, Math.ceil(total / catalogPageSize));
+  const page = Math.min(requested, pageCount);
+  const start = (page - 1) * catalogPageSize;
+  return { items: items.slice(start, start + catalogPageSize), page, pageCount, start, total };
+}
+
+function rangeLabel(total: number, start: number, count: number) {
+  if (total === 0 || count === total) return `共 ${total} 个。`;
+  return `共 ${total} 个，本页 ${start + 1}-${start + count}。`;
+}
+
+function CatalogPager({ pathname, page, pageCount, className }: { pathname: string; page: number; pageCount: number; className?: string }) {
+  if (pageCount <= 1) return null;
+  return (
+    <nav aria-label="分页" className={`flex flex-wrap items-center justify-between gap-3 ${className ?? ""}`}>
+      <p className="text-sm font-bold">
+        {page} / {pageCount}
+      </p>
+      <div className="flex flex-wrap gap-3">
+        {page > 1 ? (
+          <Button variant="outline" asChild>
+            <a href={catalogHref(pathname, page - 1)}>上一页</a>
+          </Button>
+        ) : (
+          <Button variant="outline" disabled>
+            上一页
+          </Button>
+        )}
+        {page < pageCount ? (
+          <Button asChild>
+            <a href={catalogHref(pathname, page + 1)}>下一页</a>
+          </Button>
+        ) : (
+          <Button disabled>下一页</Button>
+        )}
+      </div>
+    </nav>
+  );
+}
+
 function SkillCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string, value: string) => void }) {
+  const slice = pageSlice(skills, requestedPage());
   return (
     <section className="px-4 py-16 md:px-8 lg:px-16">
       <div className="mx-auto max-w-6xl">
@@ -168,12 +224,15 @@ function SkillCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string
           <p className="text-sm font-bold uppercase tracking-widest text-primary">/skills</p>
           <h1 className="text-3xl font-black tracking-tight md:text-5xl">全部技能</h1>
           <p className="max-w-3xl text-muted-foreground">复制地址发给 Agent。技能会装到当前项目里的同名目录。这个目录已经存在时，先删掉再装。</p>
+          <p className="text-sm font-bold">{rangeLabel(slice.total, slice.start, slice.items.length)}</p>
+          <CatalogPager pathname="/skills" page={slice.page} pageCount={slice.pageCount} />
         </div>
         <div className="grid gap-6">
-          {skills.map((skill) => (
+          {slice.items.map((skill) => (
             <SkillCard key={skill.name} skill={skill} copied={copied} onCopy={onCopy} />
           ))}
         </div>
+        <CatalogPager pathname="/skills" page={slice.page} pageCount={slice.pageCount} className="mt-8" />
       </div>
     </section>
   );
@@ -240,6 +299,7 @@ function SkillCard({ skill, copied, onCopy }: { skill: SkillEntry; copied: strin
 }
 
 function McpCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string, value: string) => void }) {
+  const slice = pageSlice(mcps, requestedPage());
   return (
     <section className="px-4 py-16 md:px-8 lg:px-16">
       <div className="mx-auto max-w-6xl">
@@ -247,9 +307,11 @@ function McpCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string, 
           <p className="text-sm font-bold uppercase tracking-widest text-primary">/mcp</p>
           <h1 className="text-3xl font-black tracking-tight md:text-5xl">全部 MCP</h1>
           <p className="max-w-3xl text-muted-foreground">让 Agent 按下面的命令启动。cwd 换成你电脑上这份仓库里的对应目录。代码更新后，重新启动 Agent。</p>
+          <p className="text-sm font-bold">{rangeLabel(slice.total, slice.start, slice.items.length)}</p>
+          <CatalogPager pathname="/mcp" page={slice.page} pageCount={slice.pageCount} />
         </div>
         <div className="grid gap-6">
-          {mcps.map((mcp) => (
+          {slice.items.map((mcp) => (
             <Card key={mcp.name} id={mcp.name}>
               <CardHeader>
                 <CardDescription>mcp/{mcp.name}</CardDescription>
@@ -268,6 +330,7 @@ function McpCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string, 
             </Card>
           ))}
         </div>
+        <CatalogPager pathname="/mcp" page={slice.page} pageCount={slice.pageCount} className="mt-8" />
       </div>
     </section>
   );
