@@ -1,6 +1,15 @@
 # food4agent
 
-给 agent 提供 skill 和 MCP。链接指向 `main` 上的最新内容。
+给 Agent 提供 skill 和 MCP，不限定哪一个 Agent。链接指向 `main` 上的最新内容。长期规则见 `DECISION.md`。
+
+## 安装
+
+技能源码在仓库的 `skills/<name>`。两条路径安装的是同一份技能：
+
+- GitHub：`https://github.com/xiaolinbenben/food4agent/skills/<name>`
+- food4agent：本机仓库里的 `skills/<name>`
+
+把其中一条路径发给 Agent。安装到当前工作目录的 `skills/<name>`。不要装到用户主目录或其他位置。同一个技能再次安装前，先删除已有的同名目录。
 
 ## 授权
 
@@ -19,9 +28,7 @@
 - Skill：`https://github.com/xiaolinbenben/food4agent/skills/listing`
 - MCP：`https://github.com/xiaolinbenben/food4agent/mcp/hello-world`
 
-把 skill 链接发给 agent 即可安装，安装到当前工作目录的 `skills/<name>`。不要装到用户主目录或其他位置。同一个链接再次安装前，先删除已有的同名目录。
-
-MCP 由 agent 以 stdio 启动 `server.py`。工作目录是 `mcp/hello-world`。仓库更新后重启 agent。
+MCP 由 Agent 以 stdio 启动 `server.py`。工作目录是本机仓库里的 `mcp/hello-world`。仓库更新后重启 Agent。
 
 ```text
 command: python3
