@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dianxiaomi SHEIN Image Backfill"
+  short_description: "Backfill SHEIN non-swatch images with batch controls."
+  default_prompt: "Use $dianxiaomi-shein-image-backfill after all non-image Dianxiaomi SHEIN fields are complete to use page batch/dropdown image controls, delete only necessary old detail, description, square, and SKU images, and upload generated local files while reusing square images for detail-main and SKU slots."

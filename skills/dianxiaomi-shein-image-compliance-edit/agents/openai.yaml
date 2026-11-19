@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dianxiaomi SHEIN Image Compliance Edit"
+  short_description: "Edit Dianxiaomi SHEIN images for compliance"
+  default_prompt: "Use $dianxiaomi-shein-image-compliance-edit to open Dianxiaomi SHEIN image editing tools and record compliance-edit actions."

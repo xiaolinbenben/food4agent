@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dianxiaomi SHEIN Image Generate"
+  short_description: "Generate SHEIN non-swatch images after variant cleanup."
+  default_prompt: "Use $dianxiaomi-shein-image-generate after Dianxiaomi SHEIN colors/specs have been normalized to generate detail, description, and pure-white single-product square images into local folders, reusing square images for detail-main and SKU slots."

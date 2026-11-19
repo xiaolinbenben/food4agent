@@ -1,0 +1,10 @@
+{
+  "name": "subagent-driven-development",
+  "version": null,
+  "description": "Use when executing implementation plans with independent tasks in the current session",
+  "author": "obra/superpowers",
+  "license": "MIT",
+  "language": "Shell",
+  "tags": [],
+  "github_url": "https://github.com/obra/superpowers/tree/main/skills/subagent-driven-development"
+}

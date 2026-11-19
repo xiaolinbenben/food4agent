@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-composition-id="root" data-width="1080" data-height="1920" data-duration="22" data-start="0">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1920px; background: linear-gradient(135deg, #2d5a27, #1a3a15); font-family: 'Courier New', monospace; color: #f5f5f0; overflow: hidden; position: relative; }
+  body::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px); pointer-events: none; }
+  #root { position: relative; width: 1080px; height: 1920px; }
+  .scene { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; }
+  .s1 { justify-content: center; padding: 120px 80px; }
+  .s1 .label { font-size: 36px; color: #ffeb3b; margin-bottom: 40px; }
+  .s1 .title { font-size: 88px; font-weight: bold; line-height: 1.3; margin-bottom: 40px; }
+  .s1 .title .hl { color: #ffeb3b; text-decoration: underline; text-decoration-style: wavy; text-decoration-color: rgba(255,235,59,0.5); }
+  .s1 .divider { width: 120px; height: 4px; background: #ffeb3b; margin-bottom: 40px; }
+  .s1 .sub { font-size: 40px; color: #bdbdbd; }
+  .s2 { padding: 100px 80px; justify-content: center; }
+  .s2 .title { font-size: 52px; margin-bottom: 50px; }
+  .s2 .title .hl { color: #ffeb3b; }
+  .s2 .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+  .s2 .card { background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 40px; }
+  .s2 .card .lbl { font-size: 28px; color: #bdbdbd; margin-bottom: 15px; }
+  .s2 .card .val { font-size: 72px; font-weight: bold; }
+  .s2 .card:nth-child(1) .val { color: #4fc3f7; }
+  .s2 .card:nth-child(2) .val { color: #ffeb3b; }
+  .s2 .card:nth-child(3) .val { color: #66bb6a; }
+  .s2 .card:nth-child(4) .val { color: #ef5350; }
+  .s3 { padding: 100px 80px; justify-content: center; }
+  .s3 .title { font-size: 52px; margin-bottom: 50px; }
+  .s3 .title .hl { color: #ffeb3b; }
+  .s3 .list { display: flex; flex-direction: column; gap: 25px; }
+  .s3 .item { display: flex; align-items: center; gap: 30px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 30px 40px; }
+  .s3 .item .num { font-size: 52px; font-weight: bold; color: #ffeb3b; min-width: 80px; }
+  .s3 .item .txt { font-size: 38px; }
+  .s4 { justify-content: center; align-items: center; text-align: center; padding: 80px; }
+  .s4 .brand { font-size: 80px; font-weight: bold; color: #ffeb3b; margin-bottom: 30px; }
+  .s4 .tagline { font-size: 44px; margin-bottom: 50px; }
+  .s4 .addr { font-size: 32px; color: #bdbdbd; }
+  .eraser { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); width: 100px; height: 30px; background: linear-gradient(to bottom, #d4a574, #c4956a); border-radius: 4px; }
+  .eraser::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 10px; background: #4a4a4a; border-radius: 0 0 4px 4px; }
+</style>
+</head>
+<body>
+  <div id="root">
+    <div class="scene s1">
+      <div class="label">第 1 课</div>
+      <div class="title">为什么你的手机<br>总是<span class="hl">碎膜</span>？</div>
+      <div class="divider"></div>
+      <div class="sub">90% 的人选膜都选错了</div>
+    </div>
+    <div class="scene s2">
+      <div class="title">晶钻膜力 <span class="hl">核心参数</span></div>
+      <div class="cards">
+        <div class="card"><div class="lbl">厚度</div><div class="val">0.33</div></div>
+        <div class="card"><div class="lbl">硬度</div><div class="val">9H</div></div>
+        <div class="card"><div class="lbl">透光率</div><div class="val">99.9%</div></div>
+        <div class="card"><div class="lbl">弧度</div><div class="val">2.5D</div></div>
+      </div>
+    </div>
+    <div class="scene s3">
+      <div class="title">四大<span class="hl">核心卖点</span></div>
+      <div class="list">
+        <div class="item"><span class="num">01</span><span class="txt">晶钻级透亮，还原屏幕本色</span></div>
+        <div class="item"><span class="num">02</span><span class="txt">纳米疏油层，指尖丝滑不留指纹</span></div>
+        <div class="item"><span class="num">03</span><span class="txt">工业级9H硬度，钥匙刀叉不划伤</span></div>
+        <div class="item"><span class="num">04</span><span class="txt">全屏覆盖防爆边，全系列适配</span></div>
+      </div>
+    </div>
+    <div class="scene s4">
+      <div class="brand">鑫源光电</div>
+      <div class="tagline">全球钢化膜知识服务商</div>
+      <div class="addr">西安东35号 · 手机配件批发市场</div>
+      <div class="eraser"></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.set('#root .s1', { opacity: 1 })
+      .to('#root .s1 .label', { opacity: 1, duration: 0.6, ease: 'power2.out' })
+      .to('#root .s1 .title', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s1 .divider', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1 .sub', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1', { opacity: 0, duration: 0.8, ease: 'power2.in' })
+      .set('#root .s2', { opacity: 1 })
+      .to('#root .s2 .title', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s2 .card', { opacity: 1, y: 0, stagger: 0.15, duration: 0.6, ease: 'back.out(1.4)' }, '-=0.3')
+      .to('#root .s2', { opacity: 0, duration: 1.0, ease: 'power2.in' })
+      .set('#root .s3', { opacity: 1 })
+      .to('#root .s3 .title', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s3 .item', { opacity: 1, x: 0, stagger: 0.12, duration: 0.7, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s3', { opacity: 0, duration: 0.8, ease: 'power2.in' })
+      .set('#root .s4', { opacity: 1 })
+      .to('#root .s4 .brand', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s4 .tagline', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s4 .addr', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s4 .eraser', { opacity: 0.4, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s4', { opacity: 0, duration: 1.2, ease: 'power2.in' });
+    window.__timelines = window.__timelines || {};
+    window.__timelines["root"] = tl;
+  </script>
+</body>
+</html>

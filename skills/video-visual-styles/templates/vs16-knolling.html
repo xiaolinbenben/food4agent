@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-composition-id="root" data-width="1080" data-height="1920" data-duration="22" data-start="0">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1920px; background: #f5f5f5; font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; color: #333; overflow: hidden; }
+  #root { position: relative; width: 1080px; height: 1920px; }
+  .scene { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; }
+  .s1 { justify-content: center; align-items: center; text-align: center; padding: 80px; }
+  .s1 .line1 { font-size: 36px; color: #999; letter-spacing: 6px; text-transform: uppercase; }
+  .s1 .title { font-size: 100px; font-weight: 800; margin: 30px 0; }
+  .s1 .line2 { width: 200px; height: 3px; background: #ccc; margin-bottom: 30px; }
+  .s1 .sub { font-size: 40px; color: #888; }
+  .s2 { padding: 100px 60px; justify-content: center; }
+  .s2 .label { font-size: 30px; color: #aaa; letter-spacing: 4px; margin-bottom: 40px; }
+  .s2 .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 16px; }
+  .s2 .item { background: white; border-radius: 10px; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid #eee; }
+  .s2 .item.wide { grid-column: span 2; }
+  .s2 .item .ico { font-size: 52px; margin-bottom: 12px; }
+  .s2 .item .nm { font-size: 30px; font-weight: 700; margin-bottom: 8px; }
+  .s2 .item .ds { font-size: 24px; color: #888; line-height: 1.4; }
+  .s2 .item .tag { font-size: 18px; padding: 4px 16px; background: #f0f0f0; border-radius: 4px; color: #999; margin-top: 10px; letter-spacing: 1px; }
+  .s3 { padding: 100px 60px; justify-content: center; }
+  .s3 .title { font-size: 52px; font-weight: 800; margin-bottom: 40px; }
+  .s3 .list { display: flex; flex-direction: column; gap: 16px; }
+  .s3 .row { background: white; border-radius: 10px; padding: 28px 32px; display: flex; align-items: center; gap: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .s3 .row .ico { font-size: 44px; }
+  .s3 .row .info { flex: 1; }
+  .s3 .row .nm { font-size: 32px; font-weight: 700; }
+  .s3 .row .ds { font-size: 26px; color: #888; margin-top: 4px; }
+  .s4 { justify-content: center; align-items: center; text-align: center; padding: 80px; }
+  .s4 .brand { font-size: 76px; font-weight: 800; letter-spacing: 4px; }
+  .s4 .en { font-size: 34px; color: #999; margin-top: 15px; letter-spacing: 2px; }
+  .s4 .tag { font-size: 30px; color: #bbb; margin-top: 40px; padding: 10px 30px; border: 2px solid #ddd; border-radius: 20px; }
+</style>
+</head>
+<body>
+  <div id="root">
+    <div class="scene s1">
+      <div class="line1">PRODUCT LINEUP</div>
+      <div class="title">晶钻膜力</div>
+      <div class="line2"></div>
+      <div class="sub">产品目录</div>
+    </div>
+    <div class="scene s2">
+      <div class="label">全系产品</div>
+      <div class="grid">
+        <div class="item wide"><div class="ico">📱</div><div class="nm">全屏覆盖钢化膜</div><div class="ds">iPhone全系列 · 2.5D弧边 · 0.33mm超薄</div><div class="tag">热销TOP1</div></div>
+        <div class="item"><div class="ico">🔍</div><div class="nm">UV全胶膜</div><div class="ds">OLED屏专用</div><div class="tag">高端</div></div>
+        <div class="item"><div class="ico">🎭</div><div class="nm">隐私防窥膜</div><div class="ds">侧面不可见</div><div class="tag">商务</div></div>
+        <div class="item"><div class="ico">📷</div><div class="nm">镜头保护膜</div><div class="ds">全包高清</div><div class="tag">配件</div></div>
+        <div class="item wide"><div class="ico">🧰</div><div class="nm">贴膜工具套装</div><div class="ds">对齐器+除尘贴+擦拭布</div><div class="tag">赠品标配</div></div>
+      </div>
+    </div>
+    <div class="scene s3">
+      <div class="title">为什么选晶钻膜力</div>
+      <div class="list">
+        <div class="row"><span class="ico">💎</span><div class="info"><div class="nm">晶钻级透亮</div><div class="ds">还原屏幕本色，色彩更鲜艳</div></div></div>
+        <div class="row"><span class="ico">🛡️</span><div class="info"><div class="nm">9H工业级硬度</div><div class="ds">钥匙刀叉不划伤</div></div></div>
+        <div class="row"><span class="ico">👆</span><div class="info"><div class="nm">纳米疏油涂层</div><div class="ds">指尖丝滑不留指纹</div></div></div>
+        <div class="row"><span class="ico">📱</span><div class="info"><div class="nm">全系列适配</div><div class="ds">iPhone 13/14/15/16 全系列</div></div></div>
+      </div>
+    </div>
+    <div class="scene s4">
+      <div class="brand">鑫源光电</div>
+      <div class="en">XINYUAN OPTOELECTRONICS</div>
+      <div class="tag">全球钢化膜知识服务商</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.set('#root .s1', { opacity: 1 })
+      .to('#root .s1 .line1', { opacity: 1, duration: 0.5, ease: 'power2.out' })
+      .to('#root .s1 .title', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1 .line2', { opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s1 .sub', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1', { opacity: 0, duration: 0.8, ease: 'power2.in' })
+      .set('#root .s2', { opacity: 1 })
+      .to('#root .s2 .label', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s2 .item', { opacity: 1, scale: 1, stagger: 0.1, duration: 0.6, ease: 'back.out(1.2)' }, '-=0.2')
+      .to('#root .s2', { opacity: 0, duration: 1.0, ease: 'power2.in' })
+      .set('#root .s3', { opacity: 1 })
+      .to('#root .s3 .title', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s3 .row', { opacity: 1, x: 0, stagger: 0.12, duration: 0.7, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s3', { opacity: 0, duration: 0.8, ease: 'power2.in' })
+      .set('#root .s4', { opacity: 1 })
+      .to('#root .s4 .brand', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s4 .en', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s4 .tag', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s4', { opacity: 0, duration: 1.2, ease: 'power2.in' });
+    window.__timelines = window.__timelines || {};
+    window.__timelines["root"] = tl;
+  </script>
+</body>
+</html>

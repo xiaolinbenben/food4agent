@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dianxiaomi SHEIN Color Block"
+  short_description: "Fill missing SHEIN color-block swatch images."
+  default_prompt: "Use $dianxiaomi-shein-color-block to fill missing 80x80 SHEIN color-block swatch images without deleting existing swatches."

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-composition-id="root" data-width="1080" data-height="1920" data-duration="30" data-start="0">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1920px; background: #F5F0E8; font-family: 'Georgia', 'Times New Roman', 'Songti SC', serif; color: #3E2723; overflow: hidden; position: relative; }
+  #root { position: relative; width: 1080px; height: 1920px; }
+  /* 羊皮纸纹理 */
+  body::before { content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(139,90,43,0.03) 3px, rgba(139,90,43,0.03) 4px);
+    pointer-events: none; }
+  /* 装饰边框 */
+  .vintage-border { position: absolute; inset: 30px; border: 2px solid rgba(139,90,43,0.2);
+    border-radius: 4px; pointer-events: none; }
+  .vintage-border::before { content: '◈'; position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+    background: #F5F0E8; padding: 0 20px; font-size: 24px; color: #8D6E63; }
+  .vintage-border::after { content: '◈'; position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
+    background: #F5F0E8; padding: 0 20px; font-size: 24px; color: #8D6E63; }
+  /* 装饰纹章 */
+  .crest { position: absolute; font-size: 100px; color: rgba(141,110,99,0.08); pointer-events: none; }
+  .crest.tl { top: 60px; left: 60px; }
+  .crest.br { bottom: 60px; right: 60px; transform: rotate(180deg); }
+  .scene { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; }
+  /* S1: 标题 */
+  .s1 { justify-content: center; align-items: center; text-align: center; padding: 140px 80px; }
+  .s1 .ornament { font-size: 36px; color: #8D6E63; margin-bottom: 20px; letter-spacing: 8px; }
+  .s1 .title { font-size: 88px; font-weight: 700; color: #3E2723; line-height: 1.2; margin-bottom: 20px; }
+  .s1 .title .hl { color: #8D6E63; font-style: italic; }
+  .s1 .divider { width: 80px; height: 1px; background: #8D6E63; margin: 20px auto; }
+  .s1 .sub { font-size: 38px; color: #6D4C41; font-weight: 400; font-style: italic; }
+  /* S2: 故事/理念 */
+  .s2 { padding: 140px 80px; justify-content: center; }
+  .s2 .title { font-size: 48px; font-weight: 700; color: #3E2723; margin-bottom: 30px; }
+  .s2 .title .hl { color: #8D6E63; }
+  .s2 .story { font-size: 36px; color: #5D4037; line-height: 1.6; font-weight: 400; }
+  .s2 .story .highlight { background: rgba(141,110,99,0.1); padding: 2px 8px; font-style: italic; }
+  .s2 .signature { font-size: 28px; color: #8D6E63; margin-top: 30px; font-style: italic; text-align: right; }
+  /* S3: 价值/数据 */
+  .s3 { padding: 120px 80px; justify-content: center; }
+  .s3 .title { font-size: 48px; font-weight: 700; margin-bottom: 40px; }
+  .s3 .title .hl { color: #8D6E63; }
+  .s3 .values { display: flex; flex-direction: column; gap: 20px; }
+  .s3 .value { display: flex; align-items: center; gap: 20px; padding: 20px 0; border-bottom: 1px solid rgba(139,90,43,0.1); }
+  .s3 .value .num { font-size: 48px; font-weight: 700; color: #8D6E63; min-width: 60px; font-family: 'Georgia', serif; }
+  .s3 .value .text { font-size: 34px; color: #5D4037; }
+  .s3 .value .desc { font-size: 24px; color: #8D6E63; }
+  /* S4: 品牌 */
+  .s4 { justify-content: center; align-items: center; text-align: center; padding: 80px; }
+  .s4 .brand { font-size: 72px; font-weight: 700; color: #3E2723; letter-spacing: 6px; }
+  .s4 .slogan { font-size: 32px; color: #6D4C41; font-style: italic; margin-top: 15px; }
+  .s4 .seal { width: 100px; height: 100px; border: 3px solid #8D6E63; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 30px auto 0; font-size: 28px; color: #8D6E63; font-family: 'Georgia', serif; }
+  .s4 .footnote { font-size: 22px; color: #A1887F; margin-top: 30px; }
+</style>
+</head>
+<body>
+  <div id="root">
+    <div class="vintage-border"></div>
+    <div class="crest tl">❦</div><div class="crest br">❦</div>
+    <!-- S1: 标题 -->
+    <div class="scene s1">
+      <div class="ornament">❧ ❧ ❧</div>
+      <div class="title">{TITLE}<br><span class="hl">{TITLE_HL}</span></div>
+      <div class="divider"></div>
+      <div class="sub">{SUBTITLE}</div>
+    </div>
+    <!-- S2: 故事 -->
+    <div class="scene s2">
+      <div class="title"><span class="hl">❧</span> {STORY_TITLE}</div>
+      <div class="story">{STORY_TEXT}</div>
+      <div class="signature">—— {SIGNATURE}</div>
+    </div>
+    <!-- S3: 价值 -->
+    <div class="scene s3">
+      <div class="title"><span class="hl">❧</span> {VALUE_TITLE}</div>
+      <div class="values">
+        <div class="value"><div class="num">01</div><div><div class="text">{VALUE1}</div><div class="desc">{VALUE1_DESC}</div></div></div>
+        <div class="value"><div class="num">02</div><div><div class="text">{VALUE2}</div><div class="desc">{VALUE2_DESC}</div></div></div>
+        <div class="value"><div class="num">03</div><div><div class="text">{VALUE3}</div><div class="desc">{VALUE3_DESC}</div></div></div>
+      </div>
+    </div>
+    <!-- S4: 品牌 -->
+    <div class="scene s4">
+      <div class="brand">西安膜世界</div>
+      <div class="slogan">十年 · 专注手机配件</div>
+      <div class="seal">信</div>
+      <div class="footnote">始于2016 · 品质如一</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.set('#root .s1', { opacity: 1 })
+      .to('#root .s1 .ornament', { opacity: 1, duration: 0.5, ease: 'power2.out' })
+      .to('#root .s1 .title', { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1 .divider', { opacity: 1, scaleX: 1, duration: 0.6, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s1 .sub', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1', { opacity: 0, duration: 0.8, ease: 'power2.in' })
+      .set('#root .s2', { opacity: 1 })
+      .to('#root .s2 .title', { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s2 .story', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s2 .signature', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s2', { opacity: 0, duration: 0.8, ease: 'power2.in' })
+      .set('#root .s3', { opacity: 1 })
+      .to('#root .s3 .title', { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s3 .value', { opacity: 1, x: 0, stagger: 0.15, duration: 0.7, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s3', { opacity: 0, duration: 0.8, ease: 'power2.in' })
+      .set('#root .s4', { opacity: 1 })
+      .to('#root .s4 .brand', { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s4 .slogan', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s4 .seal', { opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(2)' }, '-=0.2')
+      .to('#root .s4 .footnote', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.1')
+      .to('#root .s4', { opacity: 0, duration: 1.0, ease: 'power2.in' });
+    window.__timelines = window.__timelines || {};
+    window.__timelines["root"] = tl;
+  </script>
+</body>
+</html>

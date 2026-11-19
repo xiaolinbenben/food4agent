@@ -1,0 +1,10 @@
+{
+  "name": "systematic-debugging",
+  "version": null,
+  "description": "Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes",
+  "author": "obra/superpowers",
+  "license": "MIT",
+  "language": "Shell",
+  "tags": [],
+  "github_url": "https://github.com/obra/superpowers/tree/main/skills/systematic-debugging"
+}

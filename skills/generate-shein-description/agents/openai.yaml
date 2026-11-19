@@ -1,0 +1,4 @@
+interface:
+  display_name: "Generate SHEIN Description"
+  short_description: "Generate an English SHEIN description from crawled data and image URLs."
+  default_prompt: "Use $generate-shein-description to generate an English SHEIN product description from the current raw-product.json."

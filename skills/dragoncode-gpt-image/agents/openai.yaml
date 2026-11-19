@@ -1,0 +1,4 @@
+interface:
+  display_name: "DragonCode GPT Image"
+  short_description: "Generate/edit images through DragonCode GPT-Image-2."
+  default_prompt: "Use $dragoncode-gpt-image to submit, poll, or PollOnce-check an image generation task through DragonCode GPT-Image-2."

@@ -1,0 +1,3 @@
+display_name: Feishu Human Review Notification
+short_description: Notify human reviewers of Dianxiaomi products through a Feishu bot.
+default_prompt: Notify human reviewers for the current Dianxiaomi product pending publication.

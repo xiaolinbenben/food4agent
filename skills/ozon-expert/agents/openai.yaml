@@ -1,0 +1,7 @@
+interface:
+  display_name: "Ozon Expert"
+  short_description: "Ozon seller operations and listing guidance"
+  default_prompt: "Use $ozon-expert to diagnose an Ozon listing, keyword, upload, pricing, logistics, or promotion problem with Ozon-specific operating logic."
+
+policy:
+  allow_implicit_invocation: true

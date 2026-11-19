@@ -1,0 +1,5 @@
+{
+  "actorEndpointEnv": "APIFY_OZON_ACTOR_URL",
+  "defaultActorEndpoint": "https://api.apify.com/v2/acts/zen-studio~ozon-scraper-pro/run-sync-get-dataset-items",
+  "maxItems": 20
+}

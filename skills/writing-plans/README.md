@@ -1,0 +1,5 @@
+# writing-plans
+
+Use when you have a spec or requirements for a multi-step task, before touching code
+
+> Generated from SkillHub

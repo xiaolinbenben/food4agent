@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-composition-id="root" data-width="1080" data-height="1920" data-duration="25" data-start="0">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1920px; background: #FFFFFF; font-family: 'Inter', -apple-system, 'Helvetica Neue', Arial, sans-serif; color: #212121; overflow: hidden; position: relative; }
+  #root { position: relative; width: 1080px; height: 1920px; }
+  /* 半调网点背景 */
+  body::before { content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle, rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 20px 20px; pointer-events: none; }
+  /* 波普装饰元素 */
+  .pop-deco { position: absolute; pointer-events: none; }
+  .pop-deco.d1 { width: 200px; height: 200px; background: #FF1744; border-radius: 50%; top: -40px; right: -40px; opacity: 0.1; }
+  .pop-deco.d2 { width: 120px; height: 120px; background: #FFD600; border-radius: 50%; bottom: 100px; left: -30px; opacity: 0.15; }
+  .pop-deco.d3 { width: 80px; height: 80px; background: #00E5FF; border-radius: 50%; top: 300px; left: 60px; opacity: 0.12; }
+  .pop-deco.d4 { width: 0; height: 0; border-left: 40px solid transparent; border-right: 40px solid transparent; border-bottom: 70px solid #FF1744; top: 150px; right: 100px; opacity: 0.08; }
+  .pop-deco .burst { position: absolute; font-size: 60px; opacity: 0.1; }
+  .scene { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; }
+  /* S1: 标题 */
+  .s1 { justify-content: center; align-items: center; text-align: center; padding: 140px 60px; }
+  .s1 .burst-label { font-size: 80px; font-weight: 900; display: inline-block; padding: 10px 30px; background: #FF1744; color: #FFFFFF; transform: rotate(-3deg); margin-bottom: 30px; }
+  .s1 .title { font-size: 100px; font-weight: 900; color: #212121; line-height: 1.1; margin-bottom: 20px; }
+  .s1 .title .hl { color: #FF1744; background: #FFD600; padding: 0 10px; }
+  .s1 .sub { font-size: 44px; color: #757575; font-weight: 700; }
+  .s1 .boom { font-size: 30px; font-weight: 900; color: #FF1744; margin-top: 30px; letter-spacing: 5px; }
+  /* S2: 核心卖点 */
+  .s2 { padding: 120px 60px; justify-content: center; }
+  .s2 .title { font-size: 56px; font-weight: 900; margin-bottom: 40px; color: #212121; }
+  .s2 .title .hl { color: #FF1744; }
+  .s2 .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .s2 .card { border: 4px solid #212121; padding: 30px 20px; text-align: center; position: relative; }
+  .s2 .card:nth-child(1) { background: #FFD600; }
+  .s2 .card:nth-child(2) { background: #00E5FF; }
+  .s2 .card:nth-child(3) { background: #FF1744; color: #FFFFFF; }
+  .s2 .card:nth-child(4) { background: #212121; color: #FFFFFF; }
+  .s2 .card .icon { font-size: 48px; margin-bottom: 10px; }
+  .s2 .card .text { font-size: 30px; font-weight: 800; }
+  .s2 .card .desc { font-size: 22px; font-weight: 400; margin-top: 6px; opacity: 0.8; }
+  .s2 .card .badge { position: absolute; top: -12px; right: -12px; background: #FF1744; color: #FFF; font-size: 18px; font-weight: 900; padding: 4px 12px; border-radius: 20px; }
+  /* S3: 数据/行动 */
+  .s3 { padding: 120px 60px; justify-content: center; }
+  .s3 .title { font-size: 56px; font-weight: 900; margin-bottom: 40px; }
+  .s3 .title .hl { color: #FF1744; }
+  .s3 .big-num { font-size: 140px; font-weight: 900; color: #FF1744; text-align: center; line-height: 1; }
+  .s3 .big-label { font-size: 40px; font-weight: 700; text-align: center; color: #212121; margin-bottom: 40px; }
+  .s3 .action { font-size: 36px; font-weight: 800; text-align: center; padding: 20px; border: 4px dashed #212121; margin-top: 20px; }
+  .s3 .action .hl { color: #FF1744; }
+  /* S4: 品牌 */
+  .s4 { justify-content: center; align-items: center; text-align: center; padding: 80px; }
+  .s4 .brand { font-size: 80px; font-weight: 900; color: #212121; }
+  .s4 .slogan { font-size: 36px; color: #757575; font-weight: 700; margin-top: 15px; }
+  .s4 .cta { font-size: 32px; font-weight: 800; color: #FFFFFF; background: #FF1744; padding: 16px 50px; display: inline-block; margin-top: 40px; border-radius: 50px; }
+  .s4 .tagline { font-size: 24px; color: #BDBDBD; margin-top: 30px; }
+</style>
+</head>
+<body>
+  <div id="root">
+    <div class="pop-deco d1"></div><div class="pop-deco d2"></div>
+    <div class="pop-deco d3"></div><div class="pop-deco d4"></div>
+    <!-- S1: 标题 -->
+    <div class="scene s1">
+      <div class="burst-label">{BURST_TEXT}</div>
+      <div class="title">{TITLE_LINE1}<br><span class="hl">{TITLE_HL}</span></div>
+      <div class="sub">{SUBTITLE}</div>
+      <div class="boom">⚡ {BOOM_TEXT} ⚡</div>
+    </div>
+    <!-- S2: 卖点 -->
+    <div class="scene s2">
+      <div class="title"><span class="hl">●</span> {SELL_TITLE}</div>
+      <div class="cards">
+        <div class="card"><div class="icon">{ICON1}</div><div class="text">{CARD1}</div><div class="desc">{CARD1_DESC}</div></div>
+        <div class="card"><div class="icon">{ICON2}</div><div class="text">{CARD2}</div><div class="desc">{CARD2_DESC}</div></div>
+        <div class="card"><div class="icon">{ICON3}</div><div class="text">{CARD3}</div><div class="desc">{CARD3_DESC}</div></div>
+        <div class="card"><div class="icon">{ICON4}</div><div class="text">{CARD4}</div><div class="desc">{CARD4_DESC}</div></div>
+      </div>
+    </div>
+    <!-- S3: 数据 -->
+    <div class="scene s3">
+      <div class="title"><span class="hl">●</span> {DATA_TITLE}</div>
+      <div class="big-num">{BIG_NUM}</div>
+      <div class="big-label">{BIG_LABEL}</div>
+      <div class="action">🔥 <span class="hl">{ACTION_TEXT}</span></div>
+    </div>
+    <!-- S4: 品牌 -->
+    <div class="scene s4">
+      <div class="brand">西安膜世界</div>
+      <div class="slogan">全品类手机配件批发</div>
+      <div class="cta">立即咨询</div>
+      <div class="tagline">一件代发 · 量大从优</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.set('#root .s1', { opacity: 1 })
+      .to('#root .s1 .burst-label', { opacity: 1, scale: 1, rotation: -3, duration: 0.5, ease: 'back.out(2)' })
+      .to('#root .s1 .title', { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1 .sub', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1 .boom', { opacity: 1, scale: 1.2, duration: 0.4, ease: 'power2.out' }, '-=0.1')
+      .to('#root .s1', { opacity: 0, duration: 0.6, ease: 'power2.in' })
+      .set('#root .s2', { opacity: 1 })
+      .to('#root .s2 .title', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s2 .card', { opacity: 1, scale: 1, stagger: 0.1, duration: 0.5, ease: 'back.out(1.5)' }, '-=0.2')
+      .to('#root .s2', { opacity: 0, duration: 0.6, ease: 'power2.in' })
+      .set('#root .s3', { opacity: 1 })
+      .to('#root .s3 .title', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s3 .big-num', { opacity: 1, scale: 1, duration: 0.6, ease: 'elastic.out(1,0.5)' }, '-=0.2')
+      .to('#root .s3 .big-label', { opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s3 .action', { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, '-=0.1')
+      .to('#root .s3', { opacity: 0, duration: 0.6, ease: 'power2.in' })
+      .set('#root .s4', { opacity: 1 })
+      .to('#root .s4 .brand', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s4 .slogan', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s4 .cta', { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.5)' }, '-=0.2')
+      .to('#root .s4 .tagline', { opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.1')
+      .to('#root .s4', { opacity: 0, duration: 1.0, ease: 'power2.in' });
+    window.__timelines = window.__timelines || {};
+    window.__timelines["root"] = tl;
+  </script>
+</body>
+</html>

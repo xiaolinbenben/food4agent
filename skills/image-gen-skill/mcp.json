@@ -1,0 +1,48 @@
+{
+  "apis": [
+    {
+      "name": "generateImage",
+      "description": "AI 图片生成（文生图）：根据文字描述生成图片。\n调用前置条件：用户已明确表达了图片生成需求，或明确指定了要生成什么内容的图片。AI 可根据用户描述润色 prompt 以提升生成质量。\n【严禁场景】用户表达的是文本生成需求时禁止调用，应引导至 text-gen-skill 的 generateText；用户提供了一张已有图片要求编辑/修改时禁止调用，应引导至 image-edit-skill。",
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "图片描述文字。取值来源：用户原话中的图片内容描述，可根据场景适当润色增强，使描述更具体。例如用户说「画只猫」可优化为「一只可爱的橘猫在阳光下打盹，毛发光泽清晰」。描述越详细生成效果越好。\n【禁止编造】必须基于用户表达的内容，不能凭空编造与用户需求无关的内容。"
+          },
+          "style": {
+            "type": "string",
+            "description": "图片风格。可选值：'auto'（默认）、'realistic'（写实）、'anime'（动漫）、'oil-painting'（油画）、'watercolor'（水彩）、'sketch'（素描）。用户未指定时使用 'auto'。",
+            "enum": ["auto", "realistic", "anime", "oil-painting", "watercolor", "sketch"]
+          }
+        },
+        "required": ["prompt"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "images": {
+            "type": "array",
+            "description": "生成的图片列表，每项为可供展示的图片"
+          }
+        },
+        "required": ["images"],
+        "additionalProperties": false
+      },
+      "_meta": {
+        "ui": {
+          "componentPath": "components/image-result-card/index"
+        }
+      }
+    }
+  ],
+  "components": [
+    {
+      "path": "components/image-result-card/index",
+      "relatedPage": "/pages/home/home"
+    }
+  ]
+}

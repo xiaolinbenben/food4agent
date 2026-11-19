@@ -1,0 +1,4 @@
+interface:
+  display_name: "Terln GPT Image"
+  short_description: "Generate images through Terln gpt-image-2."
+  default_prompt: "Use $terln-gpt-image to generate an image through the Terln gpt-image-2 API."

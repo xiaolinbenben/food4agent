@@ -1,0 +1,118 @@
+# Account & workflow config - 工程人智库公众号专用配置
+# Secrets go in aws.env at repo root (see env.example.yaml in this directory)
+# Per-article metadata & publish_completed go in each article.yaml
+
+# ── Account & positioning ──
+article_category: 工程技术/工程管理/职场成长        # 账号定位：工程领域
+target_reader: 工程从业人员、项目经理、技术人员    # 目标读者
+tone: professional        # 语调：专业但不晦涩，有理性的深度，也有人文的温度
+update_frequency: weekly        # 发布频率：每周
+default_author: "工程人的智库"           # 默认作者
+
+# ── Topics & titles ──
+topic_direction: "避免纯理论，注重实战可操作性"          # 选题方向
+title_style: 干货型          # 标题风格：干货型
+title_max_length: 25         # 标题最大长度（中文字符）
+summary_length: "80-128"     # 摘要长度范围
+forbidden_title_phrases: []  # 禁止的标题词汇
+
+# ── Writing ──
+writing_style: 口语化        # 写作风格：口语化，适合手机阅读
+paragraph_preference: 短段为主 # 段落偏好：短段落（3-5行）
+heading_density: 每节必有小标题 # 标题密度
+target_word_count: "1500-2500"        # 目标字数
+closing_block: ""            # 全局结尾块（Markdown字符串）
+forbidden_words: []          # 正文中禁止的词汇
+original_attribution: "original"     # 原创声明
+
+# ── Preset defaults ──
+default_structure:
+  - AI Skill 爆款教程结构
+default_closing_block:
+  - brand
+default_title_style:
+  - 技术实操指南型
+default_format_preset:
+  - 工程蓝
+default_cover_image_style:
+  - 极简科技感
+default_article_image_style:
+  - 扁平插画
+default_sticker_style: []
+
+# ── Custom presets (override defaults) ──
+custom_structure: []
+custom_closing_block: []
+custom_title_style: []
+custom_format_preset: []
+custom_cover_image_style: []
+custom_article_image_style: []
+custom_sticker_style: []
+
+# ── Images ──
+image_source: generated       # generated | user
+cover_aspect: "2.35:1"       # 封面图宽高比
+cover_style: 简约             # 封面风格
+image_density: 每节一图       # 正文图片密度
+caption_style: 有图注         # 图注风格
+multi_image_count: 6          # 多图场景默认数量
+
+# ── Review ──
+review_required:
+  - 敏感词
+  - 错别字
+  - 链接
+  - 原创标注
+custom_sensitive_words: []    # 自定义敏感词
+review_output_format: 分块详细 # 审稿输出格式
+
+# ── Embeds ──
+embeds:
+  profiles:                   # 公众号卡片
+    - nickname: "工程人的智库"
+      alias: ""
+      id: ""
+      profile_id: ""
+      headimg: ""
+      signature: "工程人的知识宝库"
+      service_type: "2"
+  miniprograms: []              # 小程序链接
+  miniprogram_cards: []         # 小程序卡片
+  related_articles:             # 相关文章
+    manual: []
+
+# ── Paths ──
+drafts_root: drafts/          # 草稿根目录
+published_root: posts/published/ # 已发布归档目录
+series_root: series/          # 系列/专题根目录
+
+# ── Publishing & comments ──
+ENABLE_WECHAT: true                # 是否配置微信账号
+publish_method: draft         # draft | published | none
+wechat_publish_slot: 1        # 微信账号槽位
+need_open_comment: 1          # 是否开启评论
+only_fans_can_comment: 0      # 是否仅粉丝可评论
+
+# Whether publishing is complete
+publish_completed: false      # 发布是否完成
+
+# ── Writing model (MiniMax M2.7) ──
+writing_model:
+  provider: "openai"                    # MiniMax 兼容 OpenAI 格式
+  base_url: "https://api.minimaxi.com/v1"
+  model: "MiniMax-M2.7"
+  temperature: 0.7
+  max_tokens: 4000
+
+# ── Image generation model (DeepSeek V4) ──
+image_model:
+  provider: "openai"                    # DeepSeek 兼容 OpenAI 格式
+  base_url: "https://api.deepseek.com/v1"
+  model: "deepseek-v4-flash"
+  default_size: "1024x1024"
+  default_quality: "standard"
+
+# ── WeChat accounts ──
+wechat_accounts: 1                       # 微信账号数量
+wechat_api_base: "https://api.weixin.qq.com"                        # 微信 API 基础 URL
+wechat_1_name: "工程人的智库"                                                # 微信账号1显示名称

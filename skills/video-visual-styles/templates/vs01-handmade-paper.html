@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-composition-id="root" data-width="1080" data-height="1920" data-duration="30" data-start="0">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1920px; background: #F5E6D3; font-family: 'Inter', -apple-system, 'Helvetica Neue', 'Noto Serif SC', serif; color: #5D4037; overflow: hidden; position: relative; }
+  #root { position: relative; width: 1080px; height: 1920px; }
+  /* 牛皮纸纹理 */
+  body::before { content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(139,90,43,0.02) 1px, rgba(139,90,43,0.02) 2px);
+    pointer-events: none; }
+  /* 纸胶带装饰 */
+  .tape { position: absolute; width: 120px; height: 30px; opacity: 0.6; pointer-events: none; }
+  .tape.t1 { background: rgba(232,168,124,0.3); top: 40px; left: 80px; transform: rotate(-5deg); }
+  .tape.t2 { background: rgba(139,90,43,0.2); bottom: 60px; right: 80px; transform: rotate(3deg); }
+  /* 手绘装饰 */
+  .hand-drawn { position: absolute; pointer-events: none; opacity: 0.15; }
+  .hand-drawn.h1 { bottom: 200px; left: 40px; font-size: 80px; color: #E8A87C; }
+  .hand-drawn.h2 { top: 160px; right: 50px; font-size: 60px; color: #8D6E63; }
+  .scene { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; }
+  /* S1: 标题 */
+  .s1 { justify-content: center; align-items: center; text-align: center; padding: 140px 80px; }
+  .s1 .sticker { font-size: 24px; font-weight: 700; padding: 8px 25px; background: #E8A87C; color: #FFFFFF; display: inline-block; transform: rotate(-2deg); margin-bottom: 25px; }
+  .s1 .title { font-size: 92px; font-weight: 800; color: #5D4037; line-height: 1.15; margin-bottom: 15px; }
+  .s1 .title .hl { color: #E8A87C; position: relative; }
+  .s1 .title .hl::after { content: ''; position: absolute; bottom: 2px; left: 0; right: 0; height: 8px; background: rgba(232,168,124,0.3); }
+  .s1 .sub { font-size: 38px; color: #8D6E63; font-weight: 400; }
+  /* S2: 内容 */
+  .s2 { padding: 140px 80px; justify-content: center; }
+  .s2 .title { font-size: 44px; font-weight: 700; color: #5D4037; margin-bottom: 30px; }
+  .s2 .title .hl { color: #E8A87C; }
+  .s2 .content { background: rgba(255,255,255,0.5); border-radius: 16px; padding: 30px; position: relative; }
+  .s2 .content::before { content: '✂'; position: absolute; top: -15px; left: -10px; font-size: 24px; color: #E8A87C; }
+  .s2 .content p { font-size: 34px; color: #5D4037; line-height: 1.7; font-weight: 400; }
+  .s2 .content .highlight { background: rgba(232,168,124,0.15); padding: 2px 6px; }
+  /* S3: 清单/步骤 */
+  .s3 { padding: 120px 80px; justify-content: center; }
+  .s3 .title { font-size: 44px; font-weight: 700; margin-bottom: 35px; }
+  .s3 .title .hl { color: #E8A87C; }
+  .s3 .list { display: flex; flex-direction: column; gap: 18px; }
+  .s3 .item { display: flex; align-items: flex-start; gap: 16px; padding: 18px; background: rgba(255,255,255,0.4); border-radius: 12px; border-left: 4px solid #E8A87C; }
+  .s3 .item .check { font-size: 28px; color: #E8A87C; flex-shrink: 0; }
+  .s3 .item .text { font-size: 32px; color: #5D4037; font-weight: 500; }
+  .s3 .item .desc { font-size: 24px; color: #8D6E63; margin-top: 4px; }
+  /* S4: 品牌 */
+  .s4 { justify-content: center; align-items: center; text-align: center; padding: 80px; }
+  .s4 .brand { font-size: 76px; font-weight: 800; color: #5D4037; }
+  .s4 .slogan { font-size: 32px; color: #8D6E63; margin-top: 12px; }
+  .s4 .tag { display: inline-block; padding: 12px 35px; border: 2px solid #E8A87C; border-radius: 30px; color: #E8A87C; font-size: 28px; font-weight: 700; margin-top: 35px; }
+  .s4 .footnote { font-size: 22px; color: #BCAAA4; margin-top: 30px; }
+</style>
+</head>
+<body>
+  <div id="root">
+    <div class="tape t1"></div><div class="tape t2"></div>
+    <div class="hand-drawn h1">✿</div><div class="hand-drawn h2">✎</div>
+    <!-- S1: 标题 -->
+    <div class="scene s1">
+      <div class="sticker">{STICKER}</div>
+      <div class="title">{TITLE}<br><span class="hl">{TITLE_HL}</span></div>
+      <div class="sub">{SUBTITLE}</div>
+    </div>
+    <!-- S2: 内容 -->
+    <div class="scene s2">
+      <div class="title"><span class="hl">✿</span> {CONTENT_TITLE}</div>
+      <div class="content"><p>{CONTENT_TEXT}</p></div>
+    </div>
+    <!-- S3: 清单 -->
+    <div class="scene s3">
+      <div class="title"><span class="hl">✿</span> {LIST_TITLE}</div>
+      <div class="list">
+        <div class="item"><div class="check">✓</div><div><div class="text">{ITEM1}</div><div class="desc">{ITEM1_DESC}</div></div></div>
+        <div class="item"><div class="check">✓</div><div><div class="text">{ITEM2}</div><div class="desc">{ITEM2_DESC}</div></div></div>
+        <div class="item"><div class="check">✓</div><div><div class="text">{ITEM3}</div><div class="desc">{ITEM3_DESC}</div></div></div>
+      </div>
+    </div>
+    <!-- S4: 品牌 -->
+    <div class="scene s4">
+      <div class="brand">西安膜世界</div>
+      <div class="slogan">用心做好每一张膜</div>
+      <div class="tag">全品类 · 一件代发</div>
+      <div class="footnote">西安 · 碑林区 · 十年老店</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.set('#root .s1', { opacity: 1 })
+      .to('#root .s1 .sticker', { opacity: 1, rotation: -2, duration: 0.5, ease: 'back.out(2)' })
+      .to('#root .s1 .title', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1 .sub', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1', { opacity: 0, duration: 0.7, ease: 'power2.in' })
+      .set('#root .s2', { opacity: 1 })
+      .to('#root .s2 .title', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s2 .content', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s2', { opacity: 0, duration: 0.7, ease: 'power2.in' })
+      .set('#root .s3', { opacity: 1 })
+      .to('#root .s3 .title', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s3 .item', { opacity: 1, x: 0, stagger: 0.15, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s3', { opacity: 0, duration: 0.7, ease: 'power2.in' })
+      .set('#root .s4', { opacity: 1 })
+      .to('#root .s4 .brand', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s4 .slogan', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s4 .tag', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s4 .footnote', { opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.1')
+      .to('#root .s4', { opacity: 0, duration: 1.0, ease: 'power2.in' });
+    window.__timelines = window.__timelines || {};
+    window.__timelines["root"] = tl;
+  </script>
+</body>
+</html>

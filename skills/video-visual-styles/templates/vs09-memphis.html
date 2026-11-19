@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-composition-id="root" data-width="1080" data-height="1920" data-duration="22" data-start="0">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1920px; background: #ffffff; font-family: 'Inter', -apple-system, 'Helvetica Neue', Arial, sans-serif; color: #1a1a2e; overflow: hidden; position: relative; }
+  #root { position: relative; width: 1080px; height: 1920px; }
+  .deco { position: absolute; pointer-events: none; }
+  .deco.dc1 { width: 100px; height: 100px; background: #FF6B6B; border-radius: 50%; top: 60px; right: 80px; opacity: 0.7; }
+  .deco.dc2 { width: 50px; height: 50px; background: #4ECDC4; border-radius: 50%; top: 120px; left: 40px; }
+  .deco.dc3 { width: 30px; height: 30px; background: #FFE66D; border-radius: 50%; bottom: 200px; right: 120px; }
+  .deco.dc4 { width: 0; height: 0; border-left: 25px solid transparent; border-right: 25px solid transparent; border-bottom: 45px solid #FFE66D; top: 80px; left: 50%; opacity: 0.5; }
+  .scene { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; }
+  .s1 { justify-content: center; padding: 140px 80px; }
+  .s1 .badge { font-size: 30px; font-weight: 800; padding: 12px 35px; background: #FF6B6B; color: white; border-radius: 30px; display: inline-block; width: fit-content; }
+  .s1 .title { font-size: 108px; font-weight: 900; margin: 40px 0 20px; letter-spacing: -2px; }
+  .s1 .divider { width: 160px; height: 6px; background: #4ECDC4; margin-bottom: 30px; }
+  .s1 .sub { font-size: 48px; color: #64748b; font-weight: 600; }
+  .s2 { padding: 120px 80px; justify-content: center; }
+  .s2 .title { font-size: 56px; font-weight: 800; margin-bottom: 50px; }
+  .s2 .title .hl { color: #FF6B6B; }
+  .s2 .row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; }
+  .s2 .card { background: #f8f9fa; border-radius: 20px; padding: 35px 25px; border-left: 6px solid #4ECDC4; }
+  .s2 .card:nth-child(2) { border-left-color: #FF6B6B; }
+  .s2 .card:nth-child(3) { border-left-color: #FFE66D; }
+  .s2 .card:nth-child(4) { border-left-color: #1a1a2e; }
+  .s2 .card .lbl { font-size: 24px; color: #94a3b8; text-transform: uppercase; margin-bottom: 12px; font-weight: 700; }
+  .s2 .card .val { font-size: 68px; font-weight: 900; }
+  .s3 { padding: 120px 80px; justify-content: center; }
+  .s3 .title { font-size: 56px; font-weight: 800; margin-bottom: 50px; }
+  .s3 .title .hl { color: #4ECDC4; }
+  .s3 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .s3 .box { border-radius: 16px; padding: 30px; display: flex; flex-direction: column; gap: 12px; }
+  .s3 .box.b1 { background: #e0f7f5; border: 3px solid #4ECDC4; }
+  .s3 .box.b2 { background: #ffeaea; border: 3px solid #FF6B6B; }
+  .s3 .box.b3 { background: #fffbe0; border: 3px solid #FFE66D; }
+  .s3 .box.b4 { background: #e8e8f0; border: 3px solid #1a1a2e; }
+  .s3 .box .emo { font-size: 52px; }
+  .s3 .box .ft { font-size: 34px; font-weight: 800; }
+  .s3 .box .fd { font-size: 28px; color: #64748b; }
+  .s4 { justify-content: center; align-items: center; text-align: center; padding: 80px; }
+  .s4 .brand { font-size: 84px; font-weight: 900; letter-spacing: 4px; }
+  .s4 .en { font-size: 38px; color: #64748b; margin-top: 15px; letter-spacing: 2px; font-weight: 700; }
+  .s4 .tag { font-size: 34px; color: #FF6B6B; font-weight: 800; margin-top: 50px; padding: 14px 45px; border: 3px solid #FF6B6B; border-radius: 30px; }
+  .dots { position: absolute; bottom: 60px; right: 60px; display: grid; grid-template-columns: repeat(5, 12px); gap: 8px; }
+  .dots span { width: 12px; height: 12px; border-radius: 50%; }
+  .dots span:nth-child(odd) { background: #4ECDC4; }
+  .dots span:nth-child(even) { background: #FF6B6B; }
+</style>
+</head>
+<body>
+  <div id="root">
+    <div class="deco dc1"></div><div class="deco dc2"></div><div class="deco dc3"></div><div class="deco dc4"></div>
+    <div class="scene s1">
+      <div class="badge">NEW ARRIVAL</div>
+      <div class="title">晶钻膜力</div>
+      <div class="divider"></div>
+      <div class="sub">新一代旗舰级钢化膜</div>
+    </div>
+    <div class="scene s2">
+      <div class="title">核心参数 <span class="hl">一览</span></div>
+      <div class="row">
+        <div class="card"><div class="lbl">厚度</div><div class="val">0.33<span style="font-size:34px">mm</span></div></div>
+        <div class="card"><div class="lbl">硬度</div><div class="val">9H</div></div>
+        <div class="card"><div class="lbl">透光</div><div class="val">99.9<span style="font-size:34px">%</span></div></div>
+        <div class="card"><div class="lbl">弧度</div><div class="val">2.5D</div></div>
+      </div>
+    </div>
+    <div class="scene s3">
+      <div class="title">四大<span class="hl">核心卖点</span></div>
+      <div class="grid">
+        <div class="box b1"><span class="emo">💎</span><span class="ft">晶钻透亮</span><span class="fd">还原屏幕本色</span></div>
+        <div class="box b2"><span class="emo">🛡️</span><span class="ft">9H硬度</span><span class="fd">钥匙不划伤</span></div>
+        <div class="box b3"><span class="emo">👆</span><span class="ft">纳米疏油</span><span class="fd">不留指纹</span></div>
+        <div class="box b4"><span class="emo">📱</span><span class="ft">全屏覆盖</span><span class="fd">全系列适配</span></div>
+      </div>
+    </div>
+    <div class="scene s4">
+      <div class="brand">鑫源光电</div>
+      <div class="en">XINYUAN OPTOELECTRONICS</div>
+      <div class="tag">全球钢化膜知识服务商</div>
+      <div class="dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.set('#root .s1', { opacity: 1 })
+      .to('#root .s1 .badge', { opacity: 1, duration: 0.6, ease: 'power2.out' })
+      .to('#root .s1 .title', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s1 .divider', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1 .sub', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1', { opacity: 0, duration: 0.8, ease: 'power2.in' })
+      .set('#root .s2', { opacity: 1 })
+      .to('#root .s2 .title', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s2 .card', { opacity: 1, scale: 1, stagger: 0.15, duration: 0.7, ease: 'back.out(1.4)' }, '-=0.3')
+      .to('#root .s2', { opacity: 0, duration: 1.0, ease: 'power2.in' })
+      .set('#root .s3', { opacity: 1 })
+      .to('#root .s3 .title', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s3 .box', { opacity: 1, y: 0, stagger: 0.12, duration: 0.7, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s3', { opacity: 0, duration: 0.8, ease: 'power2.in' })
+      .set('#root .s4', { opacity: 1 })
+      .to('#root .s4 .brand', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s4 .en', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s4 .tag', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s4 .dots', { opacity: 0.5, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s4', { opacity: 0, duration: 1.2, ease: 'power2.in' });
+    window.__timelines = window.__timelines || {};
+    window.__timelines["root"] = tl;
+  </script>
+</body>
+</html>

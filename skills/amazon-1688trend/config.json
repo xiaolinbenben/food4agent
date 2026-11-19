@@ -1,0 +1,55 @@
+{
+  "_comment": "Amazon & 1688 跨境电商热词趋势追踪 - by HomeSafe - 配置文件",
+  "data_dir": "data",
+  "database": "data/trends.db",
+  "log_level": "INFO",
+  "collector": {
+    "interval_hours": 6,
+    "default_days": 7,
+    "request_delay": 2,
+    "max_retries": 3,
+    "timeout": 30
+  },
+  "1688": {
+    "enabled": true,
+    "base_seed_keywords": [
+      "女装",
+      "男装",
+      "电子产品",
+      "家居",
+      "美妆",
+      "饰品",
+      "鞋包",
+      "母婴",
+      "食品",
+      "运动户外"
+    ],
+    "max_keywords_per_run": 50,
+    "search_url": "https://www.1688.com/",
+    "suggestion_api": "https://suggest.1688.com/sug",
+    "hot_search_api": "https://www.1688.com/hotsell.html"
+  },
+  "amazon": {
+    "enabled": true,
+    "domain": "com",
+    "base_seed_keywords": [
+      "clothing",
+      "electronics",
+      "home",
+      "beauty",
+      "shoes",
+      "bags",
+      "toys",
+      "sports",
+      "kitchen",
+      "phone"
+    ],
+    "max_keywords_per_run": 50,
+    "autocomplete_api": "https://completion.amazon.com/api/2017/suggestions",
+    "best_sellers_url": "https://www.amazon.com/gp/bestsellers",
+    "hot_new_releases_url": "https://www.amazon.com/gp/new-releases",
+    "movers_shakers_url": "https://www.amazon.com/gp/movers-and-shakers"
+  },
+  "secret_key": "2adedbebe40b16b4d70c45d0eb0e0e9fa55996d31f94afa6eda470f3d0fb6691",
+  "created_at": "2026-05-02T13:45:00Z"
+}

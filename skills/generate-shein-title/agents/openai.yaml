@@ -1,0 +1,4 @@
+interface:
+  display_name: "Generate SHEIN Title"
+  short_description: "Generate a SHEIN golden title with high-exposure SEO keywords from crawled data and image URLs."
+  default_prompt: "Use $generate-shein-title to generate a SHEIN golden title with all-purpose high-exposure SEO keywords from the current raw-product.json."

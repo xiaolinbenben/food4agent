@@ -1,0 +1,39 @@
+name: nsfc-figure
+version: 0.1.0
+description: Declarative manifest for nsfc-figure static/dynamic split.
+
+always_load:
+  - ../../_shared/core/winning-patterns.md
+  - static/core/stance.md
+  - static/core/figure-taxonomy.md
+
+axes:
+  figure_type:
+    detect: What kind of figure — mechanism diagram, workflow, data plot, or combined?
+    values:
+      mechanism: static/fragments/figure_type/mechanism.md
+      workflow: static/fragments/figure_type/workflow.md
+      data: static/fragments/figure_type/data.md
+      combined: static/fragments/figure_type/combined.md
+    default: mechanism
+    multi: false
+
+  backend:
+    detect: Python, R, or schematic (hand-drawn style, no code).
+    values:
+      python: static/fragments/backend/python.md
+      r: static/fragments/backend/r.md
+      schematic: static/fragments/backend/schematic.md
+    default: schematic
+    multi: false
+
+references:
+  on_demand:
+    - condition: needs Python plotting code templates
+      path: references/python-plotting.md
+    - condition: needs R plotting code templates
+      path: references/r-plotting.md
+    - condition: needs color palette guidance
+      path: references/color-palettes.md
+    - condition: needs figure examples from winning proposals
+      path: references/figure-examples.md

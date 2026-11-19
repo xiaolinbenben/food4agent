@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-composition-id="root" data-width="1080" data-height="1920" data-duration="25" data-start="0">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1920px; background: #0D47A1; font-family: 'Inter', -apple-system, 'Helvetica Neue', Arial, sans-serif; color: #E3F2FD; overflow: hidden; position: relative; }
+  #root { position: relative; width: 1080px; height: 1920px; }
+  /* 蓝图网格背景 */
+  body::before { content: ''; position: absolute; inset: 0; background-image: 
+    linear-gradient(rgba(227,242,253,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(227,242,253,0.06) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; }
+  body::after { content: ''; position: absolute; top: 30px; right: 40px; width: 120px; height: 120px;
+    border: 2px solid rgba(255,214,0,0.15); border-radius: 50%; pointer-events: none; }
+  /* 蓝图边框装饰 */
+  .blueprint-border { position: absolute; inset: 20px; border: 2px solid rgba(227,242,253,0.12);
+    border-radius: 8px; pointer-events: none; }
+  .blueprint-border::before { content: 'REV 1.0'; position: absolute; top: -12px; right: 30px;
+    background: #0D47A1; padding: 0 15px; font-size: 18px; color: rgba(255,214,0,0.5);
+    font-family: 'Courier New', monospace; letter-spacing: 2px; }
+  .blueprint-border::after { content: 'SCALE: 1:1'; position: absolute; bottom: -12px; left: 30px;
+    background: #0D47A1; padding: 0 15px; font-size: 18px; color: rgba(227,242,253,0.3);
+    font-family: 'Courier New', monospace; }
+  /* 角落标记 */
+  .corner { position: absolute; width: 30px; height: 30px; border-color: rgba(255,214,0,0.3);
+    border-style: solid; }
+  .corner.tl { top: 30px; left: 30px; border-width: 3px 0 0 3px; }
+  .corner.tr { top: 30px; right: 30px; border-width: 3px 3px 0 0; }
+  .corner.bl { bottom: 30px; left: 30px; border-width: 0 0 3px 3px; }
+  .corner.br { bottom: 30px; right: 30px; border-width: 0 3px 3px 0; }
+  .scene { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; }
+  /* S1: 标题场景 */
+  .s1 { justify-content: center; align-items: center; text-align: center; padding: 140px 80px; }
+  .s1 .tech-badge { font-size: 22px; font-weight: 700; padding: 10px 30px;
+    background: rgba(255,214,0,0.15); color: #FFD600; border: 1px solid rgba(255,214,0,0.3);
+    display: inline-block; width: fit-content; font-family: 'Courier New', monospace;
+    letter-spacing: 3px; margin-bottom: 30px; }
+  .s1 .title { font-size: 96px; font-weight: 900; margin-bottom: 20px; letter-spacing: -1px;
+    color: #FFFFFF; }
+  .s1 .title .hl { color: #FFD600; }
+  .s1 .divider { width: 120px; height: 3px; background: #FFD600; margin: 20px auto; }
+  .s1 .sub { font-size: 40px; color: #90CAF9; font-weight: 500; }
+  .s1 .spec { font-size: 24px; color: rgba(227,242,253,0.5); margin-top: 40px;
+    font-family: 'Courier New', monospace; }
+  /* S2: 参数展示 */
+  .s2 { padding: 120px 80px; justify-content: center; }
+  .s2 .title { font-size: 52px; font-weight: 800; margin-bottom: 50px; color: #FFFFFF; }
+  .s2 .title .hl { color: #FFD600; }
+  .s2 .params { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .s2 .param-card { background: rgba(227,242,253,0.06); border: 1px solid rgba(227,242,253,0.15);
+    border-radius: 12px; padding: 30px; position: relative; }
+  .s2 .param-card::before { content: '●'; position: absolute; top: 12px; left: 12px;
+    font-size: 10px; color: rgba(255,214,0,0.4); }
+  .s2 .param-card .label { font-size: 22px; color: #90CAF9; font-weight: 500; margin-bottom: 8px; }
+  .s2 .param-card .value { font-size: 56px; font-weight: 900; color: #FFD600; }
+  .s2 .param-card .unit { font-size: 24px; color: #90CAF9; font-weight: 400; }
+  /* S3: 卖点展示 */
+  .s3 { padding: 120px 80px; justify-content: center; }
+  .s3 .title { font-size: 52px; font-weight: 800; margin-bottom: 50px; color: #FFFFFF; }
+  .s3 .title .hl { color: #FFD600; }
+  .s3 .features { display: flex; flex-direction: column; gap: 20px; }
+  .s3 .feature { display: flex; align-items: center; gap: 24px;
+    background: rgba(227,242,253,0.04); border: 1px solid rgba(227,242,253,0.1);
+    border-radius: 12px; padding: 24px 30px; }
+  .s3 .feature .icon { width: 48px; height: 48px; border-radius: 50%;
+    background: rgba(255,214,0,0.15); display: flex; align-items: center; justify-content: center;
+    font-size: 28px; flex-shrink: 0; }
+  .s3 .feature .text { font-size: 34px; font-weight: 700; color: #FFFFFF; }
+  .s3 .feature .desc { font-size: 24px; color: #90CAF9; margin-top: 4px; }
+  /* S4: 品牌收尾 */
+  .s4 { justify-content: center; align-items: center; text-align: center; padding: 80px; }
+  .s4 .brand { font-size: 72px; font-weight: 900; color: #FFFFFF; letter-spacing: 4px; }
+  .s4 .slogan { font-size: 34px; color: #90CAF9; margin-top: 20px; font-weight: 500; }
+  .s4 .cta { font-size: 28px; color: #FFD600; margin-top: 50px; padding: 14px 40px;
+    border: 2px solid rgba(255,214,0,0.3); border-radius: 30px; display: inline-block; }
+  .s4 .footnote { font-size: 20px; color: rgba(227,242,253,0.3); margin-top: 60px;
+    font-family: 'Courier New', monospace; }
+</style>
+</head>
+<body>
+  <div id="root">
+    <div class="blueprint-border"></div>
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <!-- S1: 标题 -->
+    <div class="scene s1">
+      <div class="tech-badge">TECH SPEC</div>
+      <div class="title"><span class="hl">●</span> {TITLE}</div>
+      <div class="divider"></div>
+      <div class="sub">{SUBTITLE}</div>
+      <div class="spec">MODEL: {MODEL} | SPEC: v1.0</div>
+    </div>
+    <!-- S2: 参数 -->
+    <div class="scene s2">
+      <div class="title">技术<span class="hl">参数</span></div>
+      <div class="params">
+        <div class="param-card"><div class="label">{PARAM1_LABEL}</div><div class="value">{PARAM1_VAL}<span class="unit"> {PARAM1_UNIT}</span></div></div>
+        <div class="param-card"><div class="label">{PARAM2_LABEL}</div><div class="value">{PARAM2_VAL}<span class="unit"> {PARAM2_UNIT}</span></div></div>
+        <div class="param-card"><div class="label">{PARAM3_LABEL}</div><div class="value">{PARAM3_VAL}<span class="unit"> {PARAM3_UNIT}</span></div></div>
+        <div class="param-card"><div class="label">{PARAM4_LABEL}</div><div class="value">{PARAM4_VAL}<span class="unit"> {PARAM4_UNIT}</span></div></div>
+      </div>
+    </div>
+    <!-- S3: 卖点 -->
+    <div class="scene s3">
+      <div class="title">核心<span class="hl">卖点</span></div>
+      <div class="features">
+        <div class="feature"><div class="icon">{ICON1}</div><div><div class="text">{FEATURE1}</div><div class="desc">{FEATURE1_DESC}</div></div></div>
+        <div class="feature"><div class="icon">{ICON2}</div><div><div class="text">{FEATURE2}</div><div class="desc">{FEATURE2_DESC}</div></div></div>
+        <div class="feature"><div class="icon">{ICON3}</div><div><div class="text">{FEATURE3}</div><div class="desc">{FEATURE3_DESC}</div></div></div>
+      </div>
+    </div>
+    <!-- S4: 品牌 -->
+    <div class="scene s4">
+      <div class="brand">西安膜世界</div>
+      <div class="slogan">全品类手机配件批发</div>
+      <div class="cta">一件代发 · 量大从优</div>
+      <div class="footnote">MO WORLD · 2026</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.set('#root .s1', { opacity: 1 })
+      .to('#root .s1 .tech-badge', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' })
+      .to('#root .s1 .title', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1 .divider', { opacity: 1, scaleX: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s1 .sub', { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s1 .spec', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.1')
+      .to('#root .s1', { opacity: 0, duration: 0.6, ease: 'power2.in' })
+      .set('#root .s2', { opacity: 1 })
+      .to('#root .s2 .title', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s2 .param-card', { opacity: 1, scale: 1, stagger: 0.12, duration: 0.6, ease: 'back.out(1.2)' }, '-=0.2')
+      .to('#root .s2', { opacity: 0, duration: 0.6, ease: 'power2.in' })
+      .set('#root .s3', { opacity: 1 })
+      .to('#root .s3 .title', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s3 .feature', { opacity: 1, x: 0, stagger: 0.15, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s3', { opacity: 0, duration: 0.6, ease: 'power2.in' })
+      .set('#root .s4', { opacity: 1 })
+      .to('#root .s4 .brand', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '+=0.2')
+      .to('#root .s4 .slogan', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3')
+      .to('#root .s4 .cta', { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+      .to('#root .s4 .footnote', { opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.1')
+      .to('#root .s4', { opacity: 0, duration: 1.0, ease: 'power2.in' });
+    window.__timelines = window.__timelines || {};
+    window.__timelines["root"] = tl;
+  </script>
+</body>
+</html>
