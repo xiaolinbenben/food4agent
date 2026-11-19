@@ -2,7 +2,7 @@
 
 全栈站点，架构与 [fullstack-app-template](https://github.com/xiaolinbenben/fullstack-app-template) 相同。命令在 `apps/` 目录里执行。
 
-公共首页是 food4agent 的落地页：BoldKit neobrutalism 组件，介绍框架对齐「一句话价值、接入入口、三步、能力、使用方式、常见问题」。管理端仍是 `admin` / `admin123`，账号写在首页上。
+公共首页介绍仓库里的技能和 MCP，并链到 `/skills` 和 `/mcp`。管理端仍是 `admin` / `admin123`，不在公共页面展示。
 
 本地地址：
 
@@ -80,7 +80,7 @@ GET  /api/admin/session
 POST /api/admin/logout
 ```
 
-`GET /api/woodfish` 返回木鱼被敲过的总次数，`POST /api/woodfish` 把次数加一。次数存在 SQLite 里。参观管理端的账号和密码写死为 `admin` / `admin123`，首页上能看到，不能在页面里修改。
+`GET /api/woodfish` 返回木鱼被敲过的总次数，`POST /api/woodfish` 把次数加一。次数存在 SQLite 里。参观管理端的账号和密码写死为 `admin` / `admin123`，不在公共页面展示，也不能在页面里修改。
 
 响应统一为：
 

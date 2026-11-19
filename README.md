@@ -47,5 +47,5 @@ cwd: /你的路径/food4agent/mcp/hello-world
 
 ## 站点
 
-`apps/` 是全栈站点，架构与 fullstack-app-template 相同。公共首页介绍本仓库的 Skill 和 MCP。用法见 `apps/README.md`。
+`apps/` 是全栈站点。公共首页介绍本仓库的 Skill 和 MCP，技能目录是 `/skills`，MCP 目录是 `/mcp`。用法见 `apps/README.md`。
 
