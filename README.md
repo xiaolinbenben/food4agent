@@ -1,15 +1,10 @@
 # food4agent
 
-给 Agent 提供 skill 和 MCP，不限定哪一个 Agent。链接指向 `main` 上的最新内容。长期规则见 `DECISION.md`。
+给 Agent 提供 skill 和 MCP。技能安装地址是 `https://food4agent.com/skills/<name>`。长期规则见 `DECISION.md`。
 
 ## 安装
 
-技能源码在仓库的 `skills/<name>`。两条路径安装的是同一份技能：
-
-- GitHub：`https://github.com/xiaolinbenben/food4agent/skills/<name>`
-- food4agent：本机仓库里的 `skills/<name>`
-
-把其中一条路径发给 Agent。安装到当前工作目录的 `skills/<name>`。不要装到用户主目录或其他位置。同一个技能再次安装前，先删除已有的同名目录。
+把 `https://food4agent.com/skills/<name>` 发给 Agent。技能会装到当前项目的 `skills/<name>`。不要装到用户主目录。同名目录已经存在时，先删掉再装。
 
 ## 授权
 
@@ -21,12 +16,13 @@
 
 ## 链接
 
-- Skill：`https://github.com/xiaolinbenben/food4agent/skills/hello-world`
-- Skill：`https://github.com/xiaolinbenben/food4agent/skills/terln-image-gen`
-- Skill：`https://github.com/xiaolinbenben/food4agent/skills/get-amazon-image`
-- Skill：`https://github.com/xiaolinbenben/food4agent/skills/print-fission`
-- Skill：`https://github.com/xiaolinbenben/food4agent/skills/listing`
-- MCP：`https://github.com/xiaolinbenben/food4agent/mcp/hello-world`
+- Skill：`https://food4agent.com/skills/hello-world`
+- Skill：`https://food4agent.com/skills/terln-image-gen`
+- Skill：`https://food4agent.com/skills/get-amazon-image`
+- Skill：`https://food4agent.com/skills/print-fission`
+- Skill：`https://food4agent.com/skills/listing`
+- MCP：`https://food4agent.com/mcp`
+- 仓库：`https://github.com/xiaolinbenben/food4agent`
 
 MCP 由 Agent 以 stdio 启动 `server.py`。工作目录是本机仓库里的 `mcp/hello-world`。仓库更新后重启 Agent。
 

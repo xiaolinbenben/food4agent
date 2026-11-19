@@ -1,4 +1,5 @@
 export const repoUrl = "https://github.com/xiaolinbenben/food4agent";
+export const siteOrigin = "https://food4agent.com";
 
 export type SkillEntry = {
   name: string;
@@ -27,12 +28,8 @@ export const mcps: McpEntry[] = [
   },
 ];
 
-export function githubSkillUrl(name: string) {
-  return `${repoUrl}/skills/${name}`;
-}
-
-export function localSkillPath(name: string) {
-  return `skills/${name}`;
+export function siteSkillUrl(name: string) {
+  return `${siteOrigin}/skills/${name}`;
 }
 
 export function githubMcpUrl(name: string) {
