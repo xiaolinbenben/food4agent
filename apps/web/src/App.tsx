@@ -179,8 +179,13 @@ function SkillCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string
   );
 }
 
+function skillInstallPrompt(url: string) {
+  return `帮我安装 ${url} 这个技能`;
+}
+
 function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: string; onCopy: (key: string, value: string) => void }) {
   const url = siteSkillUrl(skill.name);
+  const prompt = skillInstallPrompt(url);
   return (
     <section className="px-4 py-16 md:px-8 lg:px-16">
       <div className="mx-auto max-w-6xl space-y-8">
@@ -198,7 +203,11 @@ function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: strin
           </CardHeader>
           <CardContent className="space-y-4">
             <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{url}</pre>
-            <CopyButton copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
+            <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{prompt}</pre>
+            <div className="flex flex-wrap gap-3">
+              <CopyButton copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
+              <CopyButton outline copied={copied === `${skill.name}:prompt`} label="复制安装口令" onClick={() => onCopy(`${skill.name}:prompt`, prompt)} />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -208,6 +217,7 @@ function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: strin
 
 function SkillCard({ skill, copied, onCopy }: { skill: SkillEntry; copied: string; onCopy: (key: string, value: string) => void }) {
   const url = siteSkillUrl(skill.name);
+  const prompt = skillInstallPrompt(url);
   return (
     <Card id={skill.name}>
       <CardHeader>
@@ -219,7 +229,11 @@ function SkillCard({ skill, copied, onCopy }: { skill: SkillEntry; copied: strin
       <CardContent className="space-y-4">
         <p className="text-muted-foreground">{skill.summary}</p>
         <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{url}</pre>
-        <CopyButton copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
+        <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{prompt}</pre>
+        <div className="flex flex-wrap gap-3">
+          <CopyButton copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
+          <CopyButton outline copied={copied === `${skill.name}:prompt`} label="复制安装口令" onClick={() => onCopy(`${skill.name}:prompt`, prompt)} />
+        </div>
       </CardContent>
     </Card>
   );
