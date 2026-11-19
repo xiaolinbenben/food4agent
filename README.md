@@ -16,6 +16,7 @@
 - Skill：`https://github.com/xiaolinbenben/food4agent/skills/terln-image-gen`
 - Skill：`https://github.com/xiaolinbenben/food4agent/skills/get-amazon-image`
 - Skill：`https://github.com/xiaolinbenben/food4agent/skills/print-fission`
+- Skill：`https://github.com/xiaolinbenben/food4agent/skills/listing`
 - MCP：`https://github.com/xiaolinbenben/food4agent/mcp/hello-world`
 
 把 skill 链接发给 agent 即可安装，安装到当前工作目录的 `skills/<name>`。不要装到用户主目录或其他位置。同一个链接再次安装前，先删除已有的同名目录。
@@ -34,6 +35,7 @@ cwd: /你的路径/food4agent/mcp/hello-world
 - `skills/terln-image-gen`：用 `gpt-image-2` 生成或编辑图片。
 - `skills/get-amazon-image`：通过 food4agent 获取 Amazon 商品图，并保存到本地。
 - `skills/print-fission`：先读取印花的共同元素，再改写风格与细节，逐张裂变。
+- `skills/listing`：读取任务目录 `input/` 的商品资料，按脚本里的列生成 `output/listing.xlsx`。列还是演示列。
 - `mcp/hello-world`：提供 `hello_world` 工具，返回 `hello world`。
 
 ## 站点
