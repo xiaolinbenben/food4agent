@@ -80,6 +80,9 @@ POST /api/woodfish
 POST /api/admin/login
 GET  /api/admin/session
 POST /api/admin/logout
+GET  /registry/skills.json
+GET  /registry/skills/<name>/manifest.json
+GET  /registry/skills/<name>/<文件路径>
 ```
 
 `GET /api/woodfish` 返回木鱼被敲过的总次数，`POST /api/woodfish` 把次数加一。次数存在 SQLite 里。参观管理端的账号和密码写死为 `admin` / `admin123`，不在公共页面展示，也不能在页面里修改。

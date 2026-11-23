@@ -6,6 +6,10 @@
 
 把 `https://food4agent.com/skills/<name>` 发给 Agent。技能会装到当前项目的 `skills/<name>`。不要装到用户主目录。同名目录已经存在时，先删掉再装。
 
+## 静态分发
+
+站点构建时把每个技能原样发布到 `https://food4agent.com/registry/skills/<name>/`，不压缩。索引是 `https://food4agent.com/registry/skills.json`，单个技能的文件清单是 `registry/skills/<name>/manifest.json`。版本是目录内容哈希，内容变了版本就变。
+
 ## 授权
 
 免费 skill 用来安装和传播。Rainforest 这类付费接口不向用户要 key，也不把 key 放进仓库。

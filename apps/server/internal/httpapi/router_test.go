@@ -22,9 +22,10 @@ func testHandler(t *testing.T) http.Handler {
 		}
 	})
 	webFS := fstest.MapFS{
-		"public/index.html":    &fstest.MapFile{Data: []byte("<html>public</html>")},
-		"public/assets/app.js": &fstest.MapFile{Data: []byte("console.log('app')")},
-		"admin/index.html":     &fstest.MapFile{Data: []byte("<html>admin</html>")},
+		"public/index.html":                    &fstest.MapFile{Data: []byte("<html>public</html>")},
+		"public/assets/app.js":                 &fstest.MapFile{Data: []byte("console.log('app')")},
+		"public/registry/skills/demo/SKILL.md": &fstest.MapFile{Data: []byte("---\nname: demo\n---\n")},
+		"admin/index.html":                     &fstest.MapFile{Data: []byte("<html>admin</html>")},
 	}
 	return New(config.Config{Addr: ":8000", EncryptionKey: "test-key"}, db, webFS)
 }
@@ -105,4 +106,26 @@ func contains(value, expected string) bool {
 		}
 	}
 	return false
+}
+
+func TestRegistryFiles(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/registry/skills/demo/SKILL.md", nil)
+	testHandler(t).ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK || !contains(recorder.Body.String(), "name: demo") {
+		t.Fatalf("status = %d, body = %q", recorder.Code, recorder.Body.String())
+	}
+	if got := recorder.Header().Get("Cache-Control"); got != "no-cache" {
+		t.Fatalf("cache control = %q", got)
+	}
+	if got := recorder.Header().Get("Content-Type"); got != "text/markdown; charset=utf-8" {
+		t.Fatalf("content type = %q", got)
+	}
+
+	recorder = httptest.NewRecorder()
+	request = httptest.NewRequest(http.MethodGet, "/registry/skills/missing/SKILL.md", nil)
+	testHandler(t).ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("missing registry status = %d", recorder.Code)
+	}
 }

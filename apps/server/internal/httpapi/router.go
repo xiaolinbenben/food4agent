@@ -54,7 +54,12 @@ func serveFrontend(c *gin.Context, webFS fs.FS) {
 
 	assetName := path.Join(fsPrefix, name)
 	info, err := fs.Stat(webFS, assetName)
+	registry := strings.HasPrefix(name, "registry/")
 	if err != nil || info.IsDir() {
+		if registry {
+			c.String(http.StatusNotFound, "not found")
+			return
+		}
 		name = "index.html"
 		assetName = path.Join(fsPrefix, name)
 	}
@@ -65,7 +70,8 @@ func serveFrontend(c *gin.Context, webFS fs.FS) {
 		return
 	}
 
-	if name == "index.html" {
+	// registry 地址不带内容哈希，必须每次校验，避免客户端拿到旧版本。
+	if name == "index.html" || registry {
 		c.Header("Cache-Control", "no-cache")
 	} else {
 		c.Header("Cache-Control", "public, max-age=31536000, immutable")
@@ -86,6 +92,9 @@ func frontendTarget(requestPath string) (string, string) {
 func contentType(name string) string {
 	if value := mime.TypeByExtension(path.Ext(name)); value != "" {
 		return value
+	}
+	if path.Ext(name) == ".md" {
+		return "text/markdown; charset=utf-8"
 	}
 	return "application/octet-stream"
 }
