@@ -58,6 +58,8 @@ make web-dev
 make admin-dev
 ```
 
+技能分类清单在 `../skills/categories.json`，每项包含 `id`、`label` 和技能名称数组 `skills`。修改分类后重新启动前端开发服务。公共前端构建时检查完整性，分类校验测试在 `web/` 下执行 `pnpm test`。
+
 开发地址：
 
 - 公共前端：`http://localhost:3000/`

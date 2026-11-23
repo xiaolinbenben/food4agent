@@ -1,4 +1,4 @@
-import { skills as skillCatalog } from "virtual:food4agent-skills";
+import { categories as skillCategories, skills as skillCatalog } from "virtual:food4agent-skills";
 
 export const repoUrl = "https://github.com/xiaolinbenben/food4agent";
 export const siteOrigin = "https://food4agent.com";
@@ -6,6 +6,12 @@ export const siteOrigin = "https://food4agent.com";
 export type SkillEntry = {
   name: string;
   summary: string;
+  categoryId: string;
+};
+
+export type SkillCategory = {
+  id: string;
+  label: string;
 };
 
 export type McpEntry = {
@@ -15,6 +21,7 @@ export type McpEntry = {
 };
 
 export const skills: SkillEntry[] = skillCatalog;
+export const categories: SkillCategory[] = skillCategories;
 
 export const mcps: McpEntry[] = [
   {

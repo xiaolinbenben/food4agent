@@ -251,6 +251,28 @@ body {
     color var(--bk-dur-snap) var(--ease-out),
     opacity var(--bk-dur-snap) var(--ease-out);
 }
+
+/* Keep the original hit area under the pointer while the control moves. */
+.bk-press-target {
+  position: relative;
+}
+.bk-press-target::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--bk-press-border, 3px));
+}
+@media (hover: hover) {
+  .bk-press-target:hover::before {
+    translate: -4px -4px;
+  }
+  .bk-press-target-reverse:hover::before {
+    translate: 4px 4px;
+  }
+}
+.bk-press-target:not(.bk-press-target-reverse):active::before {
+  translate: -4px -4px;
+}
+
 /* Universal reduced-motion guard — neutralizes movement for users who request it.
    Covers hand-rolled `transition-all` hover effects that don't use the .bk-* utilities.
    Keeps end states; only removes the timing. (a11y — improve-animations #1) */

@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
-import { Check, Copy } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Check, ChevronDown, Copy, Search, X } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { badgeVariants } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FAQAccordion } from "@/components/blocks/faq-section";
 import { FooterSimple } from "@/components/blocks/footer-section";
 import { HeroCentered } from "@/components/blocks/hero-section";
-import { githubMcpUrl, mcps, repoUrl, siteOrigin, siteSkillUrl, skills, type SkillEntry } from "@/catalog";
+import { categories, githubMcpUrl, mcps, repoUrl, siteOrigin, siteSkillUrl, skills, type SkillEntry } from "@/catalog";
 
 function currentPath() {
   const path = window.location.pathname.replace(/\/+$/, "");
@@ -169,8 +170,13 @@ function requestedPage() {
   return Number.isSafeInteger(page) ? page : 1;
 }
 
-function catalogHref(pathname: string, page: number) {
-  return page <= 1 ? pathname : `${pathname}?page=${page}`;
+function catalogHref(pathname: string, page: number, categoryId = "", query = "") {
+  const params = new URLSearchParams();
+  if (categoryId) params.set("category", categoryId);
+  if (query) params.set("q", query);
+  if (page > 1) params.set("page", String(page));
+  const search = params.toString();
+  return search ? `${pathname}?${search}` : pathname;
 }
 
 function pageSlice<T>(items: readonly T[], requested: number) {
@@ -186,7 +192,7 @@ function rangeLabel(total: number, start: number, count: number) {
   return `共 ${total} 个，本页 ${start + 1}-${start + count}。`;
 }
 
-function CatalogPager({ pathname, page, pageCount, className }: { pathname: string; page: number; pageCount: number; className?: string }) {
+function CatalogPager({ pathname, page, pageCount, categoryId, query, className }: { pathname: string; page: number; pageCount: number; categoryId?: string; query?: string; className?: string }) {
   if (pageCount <= 1) return null;
   return (
     <nav aria-label="分页" className={`flex flex-wrap items-center justify-between gap-3 ${className ?? ""}`}>
@@ -196,7 +202,7 @@ function CatalogPager({ pathname, page, pageCount, className }: { pathname: stri
       <div className="flex flex-wrap gap-3">
         {page > 1 ? (
           <Button variant="outline" asChild>
-            <a href={catalogHref(pathname, page - 1)}>上一页</a>
+            <a href={catalogHref(pathname, page - 1, categoryId, query)}>上一页</a>
           </Button>
         ) : (
           <Button variant="outline" disabled>
@@ -205,7 +211,7 @@ function CatalogPager({ pathname, page, pageCount, className }: { pathname: stri
         )}
         {page < pageCount ? (
           <Button asChild>
-            <a href={catalogHref(pathname, page + 1)}>下一页</a>
+            <a href={catalogHref(pathname, page + 1, categoryId, query)}>下一页</a>
           </Button>
         ) : (
           <Button disabled>下一页</Button>
@@ -215,24 +221,124 @@ function CatalogPager({ pathname, page, pageCount, className }: { pathname: stri
   );
 }
 
-function SkillCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string, value: string) => void }) {
-  const slice = pageSlice(skills, requestedPage());
+const categoryOptions = [
+  { id: "", label: "全部", count: skills.length },
+  ...categories.map((category) => ({ ...category, count: skills.filter((skill) => skill.categoryId === category.id).length })),
+];
+
+function SkillCategoryNav({ selectedId, query }: { selectedId: string | null; query: string }) {
+  const containerRef = useRef<HTMLElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(0);
+  const [expandedCount, setExpandedCount] = useState(0);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current!;
+    const row = measureRef.current!;
+    const measure = () => {
+      const widths = Array.from(row.children, (element) => element.getBoundingClientRect().width);
+      const moreWidth = widths.pop()!;
+      const gap = parseFloat(getComputedStyle(row).columnGap);
+      const available = container.clientWidth - 4;
+      if (widths.reduce((sum, width) => sum + width, 0) + gap * (widths.length - 1) <= available) {
+        setVisibleCount(widths.length);
+        return;
+      }
+      let used = moreWidth;
+      let count = 0;
+      for (const width of widths) {
+        if (used + gap + width > available) break;
+        used += gap + width;
+        count += 1;
+      }
+      setVisibleCount(count);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    observer.observe(row);
+    measure();
+    return () => observer.disconnect();
+  }, []);
+
+  const shownCount = Math.min(visibleCount + expandedCount, categoryOptions.length);
   return (
-    <section className="px-4 py-16 md:px-8 lg:px-16">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-10 space-y-3">
-          <p className="text-sm font-bold uppercase tracking-widest text-primary">/skills</p>
-          <h1 className="text-3xl font-black tracking-tight md:text-5xl">全部技能</h1>
-          <p className="max-w-3xl text-muted-foreground">复制地址发给 Agent。技能会装到当前项目里的同名目录。这个目录已经存在时，先删掉再装。</p>
-          <p className="text-sm font-bold">{rangeLabel(slice.total, slice.start, slice.items.length)}</p>
-          <CatalogPager pathname="/skills" page={slice.page} pageCount={slice.pageCount} />
+    <nav ref={containerRef} aria-label="技能分类" className="relative mb-6 flex flex-wrap items-center gap-3">
+      <div aria-hidden="true" className="pointer-events-none invisible absolute inset-0 overflow-hidden">
+        <div ref={measureRef} className="flex w-max gap-3">
+          {categoryOptions.map((item) => (
+            <span key={item.id} className={buttonVariants({ variant: "outline", size: "sm" })}>
+              {item.label}<span className="tabular-nums opacity-70">{item.count}</span>
+            </span>
+          ))}
+          <span className={buttonVariants({ variant: "outline", size: "sm" })}>更多<ChevronDown /></span>
         </div>
-        <div className="grid gap-6">
+      </div>
+      {categoryOptions.slice(0, shownCount).map((item) => (
+        <Button key={item.id} size="sm" variant={selectedId === item.id ? "default" : "outline"} className="shrink-0" asChild>
+          <a href={catalogHref("/skills", 1, item.id, query)} aria-current={selectedId === item.id ? "page" : undefined}>
+            {item.label}<span className="tabular-nums opacity-70">{item.count}</span>
+          </a>
+        </Button>
+      ))}
+      {shownCount < categoryOptions.length && (
+        <Button size="sm" variant={categoryOptions.slice(shownCount).some((item) => item.id === selectedId) ? "default" : "outline"} className="shrink-0" onClick={() => setExpandedCount((count) => count + 10)}>
+          更多<ChevronDown />
+        </Button>
+      )}
+    </nav>
+  );
+}
+
+function SkillCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string, value: string) => void }) {
+  const params = new URLSearchParams(window.location.search);
+  const requestedCategory = params.get("category");
+  const query = (params.get("q") ?? "").trim();
+  const terms = query.toLocaleLowerCase().split(/\s+/).filter(Boolean);
+  const category = categories.find((item) => item.id === requestedCategory);
+  const invalidCategory = requestedCategory !== null && !category;
+  const filtered = (invalidCategory ? [] : category ? skills.filter((skill) => skill.categoryId === category.id) : skills).filter((skill) => {
+    const text = `${skill.name} ${skill.summary}`.toLocaleLowerCase();
+    return terms.every((term) => text.includes(term));
+  });
+  const slice = pageSlice(filtered, requestedPage());
+  return (
+    <section className="px-4 pt-6 pb-10 [overflow-wrap:anywhere] md:px-8 md:pt-8 lg:px-16">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-5 space-y-2">
+          <p className="text-sm font-bold uppercase tracking-widest text-primary">/skills</p>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-8">
+            <h1 className="min-w-0 text-3xl font-black tracking-tight md:text-5xl">{invalidCategory ? "分类不存在" : category?.label ?? "全部技能"}</h1>
+            <form role="search" action="/skills" method="get" className="flex w-full shrink-0 gap-2 md:w-96">
+              {requestedCategory !== null && <input type="hidden" name="category" value={requestedCategory} />}
+              <input type="search" name="q" aria-label="搜索 Skill" placeholder="搜索名称或简介" defaultValue={query} className="h-11 min-w-0 flex-1 border-3 border-foreground bg-card px-3 text-sm shadow-[4px_4px_0px_hsl(var(--shadow-color))] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+              <Button type="submit" size="icon" className="shrink-0" aria-label="搜索"><Search /></Button>
+              {query && <Button variant="outline" size="icon" className="shrink-0" asChild><a href={catalogHref("/skills", 1, requestedCategory ?? "")} aria-label="清除搜索"><X /></a></Button>}
+            </form>
+          </div>
+          <p className="max-w-3xl text-muted-foreground">复制地址发给 Agent。技能会装到当前项目里的同名目录。这个目录已经存在时，先删掉再装。</p>
+        </div>
+        <SkillCategoryNav selectedId={invalidCategory ? null : category?.id ?? ""} query={query} />
+        {invalidCategory ? (
+          <div className="space-y-4 border-3 border-foreground bg-muted p-6">
+            <p>没有找到分类“{requestedCategory}”。请选择上方分类，或返回全部技能。</p>
+            <Button asChild><a href="/skills">返回全部技能</a></Button>
+          </div>
+        ) : slice.total === 0 ? (
+          <div className="border-3 border-foreground bg-muted p-6">
+            <p>没有找到匹配的技能，请更换关键词或分类。</p>
+          </div>
+        ) : null}
+        <div className="grid gap-4">
           {slice.items.map((skill) => (
-            <SkillCard key={skill.name} skill={skill} copied={copied} onCopy={onCopy} />
+            <SkillCard key={skill.name} skill={skill} query={query} copied={copied} onCopy={onCopy} />
           ))}
         </div>
-        <CatalogPager pathname="/skills" page={slice.page} pageCount={slice.pageCount} className="mt-8" />
+        {!invalidCategory && (
+          <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <p className="text-sm font-bold">{rangeLabel(slice.total, slice.start, slice.items.length)}</p>
+            <CatalogPager pathname="/skills" page={slice.page} pageCount={slice.pageCount} categoryId={category?.id} query={query} className="gap-4" />
+          </div>
+        )}
       </div>
     </section>
   );
@@ -242,17 +348,27 @@ function skillInstallPrompt(url: string) {
   return `帮我安装 ${url} 这个技能`;
 }
 
+function SkillCategoryLink({ categoryId, query = "" }: { categoryId: string; query?: string }) {
+  const category = categories.find((item) => item.id === categoryId)!;
+  return (
+    <a href={catalogHref("/skills", 1, category.id, query)} className={badgeVariants({ variant: "outline" })}>
+      {category.label}
+    </a>
+  );
+}
+
 function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: string; onCopy: (key: string, value: string) => void }) {
   const url = siteSkillUrl(skill.name);
   const prompt = skillInstallPrompt(url);
   return (
-    <section className="px-4 py-16 md:px-8 lg:px-16">
+    <section className="px-4 py-16 [overflow-wrap:anywhere] md:px-8 lg:px-16">
       <div className="mx-auto max-w-6xl space-y-8">
         <div className="space-y-3">
           <p className="text-sm font-bold uppercase tracking-widest text-primary">
             <a href="/skills">全部技能</a>
           </p>
           <h1 className="text-3xl font-black tracking-tight md:text-5xl">{skill.name}</h1>
+          <SkillCategoryLink categoryId={skill.categoryId} />
           <p className="max-w-3xl text-muted-foreground">{skill.summary}</p>
         </div>
         <Card>
@@ -262,7 +378,6 @@ function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: strin
           </CardHeader>
           <CardContent className="space-y-4">
             <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{url}</pre>
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{prompt}</pre>
             <div className="flex flex-wrap gap-3">
               <CopyButton copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
               <CopyButton outline copied={copied === `${skill.name}:prompt`} label="复制安装口令" onClick={() => onCopy(`${skill.name}:prompt`, prompt)} />
@@ -274,26 +389,26 @@ function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: strin
   );
 }
 
-function SkillCard({ skill, copied, onCopy }: { skill: SkillEntry; copied: string; onCopy: (key: string, value: string) => void }) {
+function SkillCard({ skill, query, copied, onCopy }: { skill: SkillEntry; query: string; copied: string; onCopy: (key: string, value: string) => void }) {
   const url = siteSkillUrl(skill.name);
   const prompt = skillInstallPrompt(url);
   return (
     <Card id={skill.name}>
-      <CardHeader>
-        <CardDescription>food4agent.com/skills/{skill.name}</CardDescription>
-        <CardTitle className="normal-case">
-          <a href={`/skills/${skill.name}`}>{skill.name}</a>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-muted-foreground">{skill.summary}</p>
-        <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{url}</pre>
-        <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{prompt}</pre>
-        <div className="flex flex-wrap gap-3">
-          <CopyButton copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
-          <CopyButton outline copied={copied === `${skill.name}:prompt`} label="复制安装口令" onClick={() => onCopy(`${skill.name}:prompt`, prompt)} />
+      <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:justify-between md:p-6">
+        <div className="min-w-0 space-y-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <CardTitle className="min-w-0 normal-case leading-snug">
+              <a href={`/skills/${skill.name}`} className="hover:underline">{skill.name}</a>
+            </CardTitle>
+            <SkillCategoryLink categoryId={skill.categoryId} query={query} />
+          </div>
+          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{skill.summary}</p>
         </div>
-      </CardContent>
+        <div className="flex shrink-0 flex-wrap gap-3">
+          <CopyButton size="sm" outline copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
+          <CopyButton size="sm" copied={copied === `${skill.name}:prompt`} label="复制安装口令" onClick={() => onCopy(`${skill.name}:prompt`, prompt)} />
+        </div>
+      </div>
     </Card>
   );
 }
@@ -355,9 +470,9 @@ function Missing() {
   );
 }
 
-function CopyButton({ copied, label, onClick, outline }: { copied: boolean; label: string; onClick: () => void; outline?: boolean }) {
+function CopyButton({ copied, label, onClick, outline, size }: { copied: boolean; label: string; onClick: () => void; outline?: boolean; size?: "sm" }) {
   return (
-    <Button variant={outline ? "outline" : "default"} onClick={() => void onClick()}>
+    <Button size={size} variant={outline ? "outline" : "default"} onClick={() => void onClick()}>
       {copied ? <Check /> : <Copy />}
       {copied ? "已复制" : label}
     </Button>

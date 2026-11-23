@@ -1,14 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { SkillCategory, SkillEntry } from "./src/catalog";
 
-export type SkillCatalogEntry = {
-  name: string;
-  summary: string;
-};
+type CategoryDefinition = SkillCategory & { skills: string[] };
 
 const blockIndicator = /^(?:>|\|)[+-]?\d*$/;
 
-export function readSkillCatalog(repoRoot: string): SkillCatalogEntry[] {
+export function readSkillCatalog(repoRoot: string): { skills: SkillEntry[]; categories: SkillCategory[] } {
   const skillsDir = path.join(repoRoot, "skills");
   const names = fs
     .readdirSync(skillsDir, { withFileTypes: true })
@@ -16,7 +14,36 @@ export function readSkillCatalog(repoRoot: string): SkillCatalogEntry[] {
     .map((entry) => entry.name)
     .sort((left, right) => left.localeCompare(right));
 
-  return names.map((dirName) => {
+  const definitions: CategoryDefinition[] = JSON.parse(fs.readFileSync(path.join(skillsDir, "categories.json"), "utf8"));
+  if (!Array.isArray(definitions)) {
+    throw new Error("skills/categories.json: 分类清单必须是数组");
+  }
+  const knownNames = new Set(names);
+  const categoryIds = new Set<string>();
+  const assignments = new Map<string, string>();
+  const errors: string[] = [];
+  for (const category of definitions) {
+    if (
+      !category || typeof category.id !== "string" || !/^[a-z][a-z0-9-]*$/.test(category.id) ||
+      typeof category.label !== "string" || !category.label.trim() ||
+      !Array.isArray(category.skills) || category.skills.some((name) => typeof name !== "string" || !name)
+    ) {
+      throw new Error("skills/categories.json: 每个分类必须有有效的 id、label 和 skills 名称数组");
+    }
+    if (categoryIds.has(category.id)) errors.push(`分类标识重复: ${category.id}`);
+    categoryIds.add(category.id);
+    for (const name of category.skills) {
+      if (!knownNames.has(name)) errors.push(`引用不存在的技能: ${name} (${category.id})`);
+      if (assignments.has(name)) errors.push(`重复归类: ${name} (${assignments.get(name)}, ${category.id})`);
+      assignments.set(name, category.id);
+    }
+  }
+  for (const name of names) {
+    if (!assignments.has(name)) errors.push(`缺少归类: ${name}`);
+  }
+  if (errors.length) throw new Error(`skills/categories.json:\n${errors.join("\n")}`);
+
+  const skills = names.map((dirName) => {
     const file = path.join(skillsDir, dirName, "SKILL.md");
     const text = fs.readFileSync(file, "utf8").replace(/^\uFEFF/, "");
     const frontmatter = readFrontmatter(text, dirName);
@@ -24,8 +51,10 @@ export function readSkillCatalog(repoRoot: string): SkillCatalogEntry[] {
     if (name !== dirName) {
       throw new Error(`${dirName}: frontmatter name 是 ${name}`);
     }
-    return { name, summary: readDescription(frontmatter, dirName) };
+    return { name, summary: readDescription(frontmatter, dirName), categoryId: assignments.get(name)! };
   });
+  const categories = definitions.filter((category) => category.skills.length > 0).map(({ id, label }) => ({ id, label }));
+  return { skills, categories };
 }
 
 function readFrontmatter(text: string, skillName: string) {

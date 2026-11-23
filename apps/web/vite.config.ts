@@ -14,8 +14,8 @@ function food4agentSkills(): Plugin {
     },
     load(source) {
       if (source !== resolved) return null;
-      const skills = readSkillCatalog(path.resolve(__dirname, "../.."));
-      return `export const skills = ${JSON.stringify(skills)};`;
+      const { skills, categories } = readSkillCatalog(path.resolve(__dirname, "../.."));
+      return `export const skills = ${JSON.stringify(skills)};\nexport const categories = ${JSON.stringify(categories)};`;
     },
   };
 }
