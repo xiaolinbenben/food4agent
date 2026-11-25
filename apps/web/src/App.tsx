@@ -6,7 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FAQAccordion } from "@/components/blocks/faq-section";
 import { FooterSimple } from "@/components/blocks/footer-section";
 import { HeroCentered } from "@/components/blocks/hero-section";
+import { BrandLogo, SiteHeader, siteNavLinks } from "@/components/brand-logo";
 import { categories, githubMcpUrl, mcps, repoUrl, siteOrigin, siteSkillUrl, skills, type SkillEntry } from "@/catalog";
+import { ConsoleApp } from "@/console/ConsoleApp";
+import { parseConsolePath } from "@/console/paths";
+import { accountHomeHref, followAccountHome, useSession } from "@/console/session";
 
 function currentPath() {
   const path = window.location.pathname.replace(/\/+$/, "");
@@ -22,6 +26,12 @@ function skillNameFromPath(path: string) {
 }
 
 export default function App() {
+  const consoleRoute = parseConsolePath(currentPath());
+  if (consoleRoute) return <ConsoleApp route={consoleRoute} />;
+  return <PublicSite />;
+}
+
+function PublicSite() {
   const path = currentPath();
   const skillName = skillNameFromPath(path);
   const skill = skills.find((item) => item.name === skillName) ?? null;
@@ -29,7 +39,7 @@ export default function App() {
 
   useEffect(() => {
     const titles: Record<string, string> = {
-      "/": "food4agent · 技能和 MCP",
+      "/": "food4agent · AI Agent 资源平台",
       "/skills": "food4agent · 全部技能",
       "/mcp": "food4agent · 全部 MCP",
     };
@@ -45,7 +55,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <SiteHeader path={path} />
+      <SiteHeader />
       <main>
         {path === "/" && <Home />}
         {path === "/skills" && <SkillCatalog copied={copied} onCopy={copyText} />}
@@ -57,54 +67,41 @@ export default function App() {
   );
 }
 
-function SiteHeader({ path }: { path: string }) {
-  const links = [
-    { href: "/skills", label: "技能" },
-    { href: "/mcp", label: "MCP" },
-  ];
-  return (
-    <header className="sticky top-0 z-20 border-b-3 border-foreground bg-background">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3 md:px-8">
-        <a href="/" className="text-lg font-black uppercase tracking-tight">
-          food4agent
-        </a>
-        <nav className="flex items-center gap-5 text-sm font-bold uppercase">
-          {links.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className={path === link.href || path.startsWith(`${link.href}/`) ? "bg-primary px-2 text-primary-foreground" : undefined}
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
-      </div>
-    </header>
-  );
-}
-
 function Home() {
+  const session = useSession();
+  const homeHref = accountHomeHref(session);
+  const openHome = (event: { preventDefault(): void }) => followAccountHome(event, session);
   return (
     <>
       <HeroCentered
-        title="给 Agent 用的"
-        titleHighlight="技能和 MCP"
-        description="打开技能页，把地址发给 Agent 就可以安装。"
+        title="AI Agent"
+        titleHighlight="资源平台"
+        description="技能、工具和接口。"
         primaryAction={{ label: "查看技能", href: "/skills" }}
-        secondaryAction={{ label: "查看 MCP", href: "/mcp" }}
+        secondaryAction={{ label: "我的主页", href: homeHref, onClick: openHome }}
       />
 
-      <section className="px-4 pb-8 md:px-8 lg:px-16">
-        <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-2">
+      <section className="px-4 pb-8 md:px-8">
+        <div className="mx-auto grid w-full max-w-[1440px] gap-6 md:grid-cols-2 xl:grid-cols-4">
           <Card interactive>
             <a href="/skills" className="block">
               <CardHeader>
                 <CardDescription>/skills</CardDescription>
-                <CardTitle>技能</CardTitle>
+                <CardTitle>公共技能</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">共 {skills.length} 个。点进去复制安装地址。</p>
+                <p className="text-muted-foreground">共 {skills.length} 个收录技能。</p>
+              </CardContent>
+            </a>
+          </Card>
+          <Card interactive>
+            <a href={homeHref} className="block" onClick={openHome}>
+              <CardHeader>
+                <CardDescription>/你的 ID</CardDescription>
+                <CardTitle>个人技能</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">放在你的主页。可以公开，也可以私有。</p>
               </CardContent>
             </a>
           </Card>
@@ -115,47 +112,69 @@ function Home() {
                 <CardTitle>MCP</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">共 {mcps.length} 个。点进去按页面上的命令启动。</p>
+                <p className="text-muted-foreground">共 {mcps.length} 个。按页面上的命令启动。</p>
               </CardContent>
             </a>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardDescription>接口</CardDescription>
+              <CardTitle>Agent API</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">免费直接调用。付费由平台保管供应商 key，按调用计费。</p>
+            </CardContent>
           </Card>
         </div>
       </section>
 
-      <section id="install" className="px-4 py-8 md:px-8 lg:px-16">
-        <div className="mx-auto max-w-6xl border-3 border-foreground bg-card shadow-[4px_4px_0px_hsl(var(--shadow-color))]">
+      <section id="host" className="px-4 py-8 md:px-8">
+        <div className="mx-auto w-full max-w-[1440px] border-3 border-foreground bg-card shadow-[4px_4px_0px_hsl(var(--shadow-color))]">
           <div className="space-y-4 p-6 md:p-8">
-            <h2 className="text-2xl font-black tracking-tight md:text-3xl">把地址发给 Agent</h2>
-            <p className="max-w-2xl text-muted-foreground">把技能名换到地址末尾。例如 hello-world。</p>
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{`${siteOrigin}/skills/<name>`}</pre>
+            <h2 className="text-2xl font-black tracking-tight md:text-3xl">个人技能托管</h2>
+            <p className="text-muted-foreground">用户 ID 写进地址，创建后不改。一个技能只属于一个用户，不同用户可以有同名技能。</p>
+            <p className="text-muted-foreground">先保存草稿，再发布。发出去的版本不能直接改。每个技能保留最近 10 个版本。</p>
           </div>
-          <p className="border-t-3 border-foreground bg-muted px-6 py-4 text-sm text-muted-foreground md:px-8">
-            技能会装到当前项目的 skills/&lt;name&gt;。同名目录已经存在时，先删掉再装。每个技能的地址在{" "}
-            <a href="/skills" className="font-bold text-foreground underline">
-              技能页
-            </a>
-            。
-          </p>
+        </div>
+      </section>
+
+      <section id="install" className="px-4 py-8 md:px-8">
+        <div className="mx-auto w-full max-w-[1440px] border-3 border-foreground bg-card shadow-[4px_4px_0px_hsl(var(--shadow-color))]">
+          <div className="space-y-6 p-6 md:p-8">
+            <h2 className="text-2xl font-black tracking-tight md:text-3xl">安装命令</h2>
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div>
+                <p className="mb-2 text-sm font-bold uppercase tracking-widest">公共</p>
+                <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{`npx skills add ${siteSkillUrl("hello-world")}`}</pre>
+                <p className="mt-2 text-sm text-muted-foreground">把 hello-world 换成技能名。</p>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold uppercase tracking-widest">个人公开</p>
+                <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{`npx skills add ${siteOrigin}/<user-id>/skills/<name>`}</pre>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold uppercase tracking-widest">私有</p>
+                <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{`npx skills add ${siteOrigin}/<user-id>/skills/<name>/g/<token>`}</pre>
+                <p className="mt-2 text-sm text-muted-foreground">token 是账号访问令牌。在令牌页重置后，旧链接失效。</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       <FAQAccordion
         title="常见问题"
         items={[
-          { question: "food4agent 是什么？", answer: "给 Agent 用的技能和 MCP。这个网站用来查看内容，以及复制安装地址。" },
-          { question: "技能怎么安装？", answer: "打开技能页，复制 food4agent.com/skills/技能名，发给 Agent。技能会装进当前项目的 skills 目录。" },
-          { question: "MCP 怎么使用？", answer: "打开 MCP 页，让 Agent 按上面的命令启动。代码更新后，重新启动 Agent。" },
-          { question: "更新之后要重新安装吗？", answer: "技能要重新安装。项目里已经有同名目录时，先删掉再装。MCP 不用重装，重新启动 Agent 即可。" },
+          { question: "更新之后要重新安装吗？", answer: "技能再执行一次安装命令。MCP 不用重装，重新启动 Agent。" },
         ]}
       />
       <FooterSimple
-        logo="food4agent"
+        logo={<BrandLogo />}
         links={[
-          { label: "技能", href: "/skills" },
-          { label: "MCP", href: "/mcp" },
+          ...siteNavLinks.map((item) => item.label === "我的主页" ? { label: item.label, href: homeHref, onClick: openHome } : item),
           { label: "仓库", href: repoUrl },
         ]}
-        copyright="food4agent · 技能与 MCP"
+        copyright="food4agent · AI Agent 资源平台"
       />
     </>
   );
@@ -302,8 +321,8 @@ function SkillCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string
   });
   const slice = pageSlice(filtered, requestedPage());
   return (
-    <section className="px-4 pt-6 pb-10 [overflow-wrap:anywhere] md:px-8 md:pt-8 lg:px-16">
-      <div className="mx-auto max-w-6xl">
+    <section className="px-4 pt-6 pb-10 [overflow-wrap:anywhere] md:px-8 md:pt-8">
+      <div className="mx-auto w-full max-w-[1440px]">
         <div className="mb-5 space-y-2">
           <p className="text-sm font-bold uppercase tracking-widest text-primary">/skills</p>
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-8">
@@ -315,7 +334,7 @@ function SkillCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string
               {query && <Button variant="outline" size="icon" className="shrink-0" asChild><a href={catalogHref("/skills", 1, requestedCategory ?? "")} aria-label="清除搜索"><X /></a></Button>}
             </form>
           </div>
-          <p className="max-w-3xl text-muted-foreground">复制地址发给 Agent。技能会装到当前项目里的同名目录。这个目录已经存在时，先删掉再装。</p>
+          <p className="max-w-3xl text-muted-foreground">收录的公共技能。复制安装命令即可。自己的技能在个人主页。</p>
         </div>
         <SkillCategoryNav selectedId={invalidCategory ? null : category?.id ?? ""} query={query} />
         {invalidCategory ? (
@@ -344,8 +363,8 @@ function SkillCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string
   );
 }
 
-function skillInstallPrompt(url: string) {
-  return `帮我安装 ${url} 这个技能`;
+function skillInstallCommand(url: string) {
+  return `npx skills add ${url}`;
 }
 
 function SkillCategoryLink({ categoryId, query = "" }: { categoryId: string; query?: string }) {
@@ -359,10 +378,10 @@ function SkillCategoryLink({ categoryId, query = "" }: { categoryId: string; que
 
 function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: string; onCopy: (key: string, value: string) => void }) {
   const url = siteSkillUrl(skill.name);
-  const prompt = skillInstallPrompt(url);
+  const command = skillInstallCommand(url);
   return (
-    <section className="px-4 py-16 [overflow-wrap:anywhere] md:px-8 lg:px-16">
-      <div className="mx-auto max-w-6xl space-y-8">
+    <section className="px-4 py-16 [overflow-wrap:anywhere] md:px-8">
+      <div className="mx-auto w-full max-w-[1440px] space-y-8">
         <div className="space-y-3">
           <p className="text-sm font-bold uppercase tracking-widest text-primary">
             <a href="/skills">全部技能</a>
@@ -373,14 +392,14 @@ function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: strin
         </div>
         <Card>
           <CardHeader>
-            <CardDescription>安装地址</CardDescription>
-            <CardTitle className="normal-case">发给 Agent</CardTitle>
+            <CardDescription>npx skills add</CardDescription>
+            <CardTitle className="normal-case">安装命令</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{url}</pre>
+            <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{command}</pre>
             <div className="flex flex-wrap gap-3">
-              <CopyButton copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
-              <CopyButton outline copied={copied === `${skill.name}:prompt`} label="复制安装口令" onClick={() => onCopy(`${skill.name}:prompt`, prompt)} />
+              <CopyButton outline copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
+              <CopyButton copied={copied === `${skill.name}:command`} label="复制安装命令" onClick={() => onCopy(`${skill.name}:command`, command)} />
             </div>
           </CardContent>
         </Card>
@@ -391,7 +410,7 @@ function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: strin
 
 function SkillCard({ skill, query, copied, onCopy }: { skill: SkillEntry; query: string; copied: string; onCopy: (key: string, value: string) => void }) {
   const url = siteSkillUrl(skill.name);
-  const prompt = skillInstallPrompt(url);
+  const command = skillInstallCommand(url);
   return (
     <Card id={skill.name}>
       <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:justify-between md:p-6">
@@ -406,7 +425,7 @@ function SkillCard({ skill, query, copied, onCopy }: { skill: SkillEntry; query:
         </div>
         <div className="flex shrink-0 flex-wrap gap-3">
           <CopyButton size="sm" outline copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
-          <CopyButton size="sm" copied={copied === `${skill.name}:prompt`} label="复制安装口令" onClick={() => onCopy(`${skill.name}:prompt`, prompt)} />
+          <CopyButton size="sm" copied={copied === `${skill.name}:command`} label="复制安装命令" onClick={() => onCopy(`${skill.name}:command`, command)} />
         </div>
       </div>
     </Card>
@@ -416,8 +435,8 @@ function SkillCard({ skill, query, copied, onCopy }: { skill: SkillEntry; query:
 function McpCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string, value: string) => void }) {
   const slice = pageSlice(mcps, requestedPage());
   return (
-    <section className="px-4 py-16 md:px-8 lg:px-16">
-      <div className="mx-auto max-w-6xl">
+    <section className="px-4 py-16 md:px-8">
+      <div className="mx-auto w-full max-w-[1440px]">
         <div className="mb-10 space-y-3">
           <p className="text-sm font-bold uppercase tracking-widest text-primary">/mcp</p>
           <h1 className="text-3xl font-black tracking-tight md:text-5xl">全部 MCP</h1>
@@ -454,7 +473,7 @@ function McpCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string, 
 function Missing() {
   return (
     <section className="px-4 py-20 md:px-8">
-      <div className="mx-auto max-w-3xl space-y-4">
+      <div className="mx-auto w-full max-w-[1440px] space-y-4">
         <h1 className="text-3xl font-black tracking-tight">没有这个页面</h1>
         <p className="text-muted-foreground">可以去看技能或 MCP。</p>
         <div className="flex flex-wrap gap-3">

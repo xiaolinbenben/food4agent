@@ -16,8 +16,8 @@ export interface FAQAccordionProps {
 
 export function FAQAccordion({ title, subtitle, description, items, className }: FAQAccordionProps) {
   return (
-    <section className={cn("px-4 py-16 md:px-8 lg:px-16", className)}>
-      <div className="mx-auto max-w-3xl">
+    <section className={cn("px-4 py-16 md:px-8", className)}>
+      <div className="mx-auto w-full max-w-[1440px]">
         {(title || subtitle || description) && (
           <div className="mb-12 space-y-4 text-center">
             {subtitle && <p className="text-sm font-bold uppercase tracking-widest text-primary">{subtitle}</p>}

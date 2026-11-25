@@ -3,6 +3,9 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { SkillCategory, SkillEntry } from "./src/catalog";
+import { zipStore } from "./zip-store.ts";
+
+const discoverySchema = "https://schemas.agentskills.io/discovery/0.2.0/schema.json";
 
 export type RegistryFile = { path: string; sha256: string; size: number };
 
@@ -13,9 +16,18 @@ export type RegistryIndexEntry = {
   summary: string;
   categoryId: string;
   version: string;
+  digest: string;
   updated_at: string;
   file_count: number;
   size_bytes: number;
+};
+
+export type DiscoverySkill = {
+  name: string;
+  type: "archive";
+  description: string;
+  url: string;
+  digest: string;
 };
 
 export type RegistryIndex = {
@@ -72,9 +84,11 @@ export function buildSkillRegistry(
   const updatedAt = readUpdatedAt(repoRoot);
   const registryDir = path.join(outDir, "registry");
   fs.rmSync(registryDir, { recursive: true, force: true });
+  fs.rmSync(path.join(outDir, ".well-known"), { recursive: true, force: true });
+  fs.rmSync(path.join(outDir, "skills"), { recursive: true, force: true });
 
   let totalBytes = 0;
-  const entries: RegistryIndexEntry[] = catalog.skills.map((skill) => {
+  const entries = catalog.skills.map((skill) => {
     const relativeFiles = files.get(skill.name);
     if (!relativeFiles?.includes("SKILL.md")) {
       throw new Error(`${skill.name}: git 没有跟踪 SKILL.md`);
@@ -90,6 +104,27 @@ export function buildSkillRegistry(
     });
     const manifest: RegistryManifest = { name: skill.name, version: skillVersion(manifestFiles), files: manifestFiles };
     fs.writeFileSync(path.join(targetDir, "manifest.json"), JSON.stringify(manifest));
+    const packed = zipStore(manifestFiles.map((file) => ({
+      path: file.path,
+      data: fs.readFileSync(path.join(sourceDir, file.path)),
+    })));
+    const archiveName = `${skill.name}.zip`;
+    const archiveDir = path.join(outDir, ".well-known", "agent-skills");
+    fs.mkdirSync(archiveDir, { recursive: true });
+    fs.writeFileSync(path.join(archiveDir, archiveName), packed.archive);
+    const discoverySkill: DiscoverySkill = {
+      name: skill.name,
+      type: "archive",
+      description: skill.summary || skill.name,
+      url: `/.well-known/agent-skills/${archiveName}`,
+      digest: packed.digest,
+    };
+    const skillIndexDir = path.join(outDir, "skills", skill.name, ".well-known", "agent-skills");
+    fs.mkdirSync(skillIndexDir, { recursive: true });
+    fs.writeFileSync(path.join(skillIndexDir, "index.json"), JSON.stringify({
+      $schema: discoverySchema,
+      skills: [discoverySkill],
+    }));
     const size = manifestFiles.reduce((sum, file) => sum + file.size, 0);
     totalBytes += size;
     return {
@@ -97,18 +132,27 @@ export function buildSkillRegistry(
       summary: skill.summary,
       categoryId: skill.categoryId,
       version: manifest.version,
+      digest: packed.digest,
       updated_at: updatedAt.get(skill.name) ?? "",
       file_count: manifestFiles.length,
       size_bytes: size,
+      discovery: discoverySkill,
     };
   });
 
+  const skills = entries.map(({ discovery: _discovery, ...entry }) => entry);
   const index: RegistryIndex = {
     schema: 1,
     generated_at: new Date().toISOString(),
     categories: catalog.categories,
-    skills: entries,
+    skills,
   };
   fs.writeFileSync(path.join(registryDir, "skills.json"), JSON.stringify(index));
+  const discoveryDir = path.join(outDir, ".well-known", "agent-skills");
+  fs.mkdirSync(discoveryDir, { recursive: true });
+  fs.writeFileSync(path.join(discoveryDir, "index.json"), JSON.stringify({
+    $schema: discoverySchema,
+    skills: entries.map((entry) => entry.discovery),
+  }));
   return { count: entries.length, totalBytes };
 }

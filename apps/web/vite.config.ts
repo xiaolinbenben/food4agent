@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { readSkillCatalog } from "./read-skill-catalog";
 import { buildSkillRegistry } from "./build-skill-registry";
+import { parseConsolePath } from "./src/console/paths";
 
 const repoRoot = path.resolve(__dirname, "../..");
 
@@ -48,6 +49,14 @@ export default defineConfig({
     proxy: {
       "/api": "http://127.0.0.1:8888",
       "/healthz": "http://127.0.0.1:8888",
+      "^/skill/[^/]+$": "http://127.0.0.1:8888",
+      "^/[a-z0-9][a-z0-9-]{0,31}/skills": {
+        target: "http://127.0.0.1:8888",
+        bypass(req) {
+          const pathname = (req.url ?? "").split("?")[0];
+          if (parseConsolePath(pathname)) return pathname;
+        },
+      },
     },
   },
   build: {

@@ -3,6 +3,8 @@ package httpapi
 import (
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
+	"strings"
 	"testing"
 	"testing/fstest"
 
@@ -12,22 +14,27 @@ import (
 
 func testHandler(t *testing.T) http.Handler {
 	t.Helper()
-	db, cleanup, err := database.OpenIsolated()
+	dir := t.TempDir()
+	db, err := database.Open(filepath.Join(dir, "test.db"))
 	if err != nil {
 		t.Fatalf("打开测试库失败: %v", err)
 	}
+	if err := database.Migrate(db); err != nil {
+		t.Fatalf("迁移测试库失败: %v", err)
+	}
 	t.Cleanup(func() {
-		if err := cleanup(); err != nil {
-			t.Errorf("清理测试库失败: %v", err)
+		if err := database.Close(db); err != nil {
+			t.Errorf("关闭测试库失败: %v", err)
 		}
 	})
 	webFS := fstest.MapFS{
-		"public/index.html":                    &fstest.MapFile{Data: []byte("<html>public</html>")},
-		"public/assets/app.js":                 &fstest.MapFile{Data: []byte("console.log('app')")},
-		"public/registry/skills/demo/SKILL.md": &fstest.MapFile{Data: []byte("---\nname: demo\n---\n")},
-		"admin/index.html":                     &fstest.MapFile{Data: []byte("<html>admin</html>")},
+		"public/index.html":                          &fstest.MapFile{Data: []byte("<html>public</html>")},
+		"public/assets/app.js":                       &fstest.MapFile{Data: []byte("console.log('app')")},
+		"public/registry/skills/demo/SKILL.md":       &fstest.MapFile{Data: []byte("---\nname: demo\n---\n")},
+		"public/.well-known/agent-skills/index.json": &fstest.MapFile{Data: []byte("{\"skills\":[]}")},
+		"admin/index.html":                           &fstest.MapFile{Data: []byte("<html>admin</html>")},
 	}
-	return New(config.Config{Addr: ":8000", EncryptionKey: "test-key"}, db, webFS)
+	return New(config.Config{Addr: ":8000", DatabasePath: filepath.Join(dir, "test.db"), SkillRoot: filepath.Join(dir, "skills"), EncryptionKey: "test-key"}, db, webFS)
 }
 
 func TestHealthz(t *testing.T) {
@@ -127,5 +134,21 @@ func TestRegistryFiles(t *testing.T) {
 	testHandler(t).ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("missing registry status = %d", recorder.Code)
+	}
+}
+
+func TestWellKnownIndexIsNotTheSitePage(t *testing.T) {
+	handler := testHandler(t)
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/.well-known/agent-skills/index.json", nil)
+	handler.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK || recorder.Body.String() != `{"skills":[]}` {
+		t.Fatalf("status = %d body = %q", recorder.Code, recorder.Body.String())
+	}
+	recorder = httptest.NewRecorder()
+	request = httptest.NewRequest(http.MethodGet, "/.well-known/agent-skills/missing.json", nil)
+	handler.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound || strings.Contains(recorder.Body.String(), "<html>") {
+		t.Fatalf("missing status = %d body = %q", recorder.Code, recorder.Body.String())
 	}
 }

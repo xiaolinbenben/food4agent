@@ -69,7 +69,18 @@ func Migrate(db *gorm.DB) error {
 	if db == nil {
 		return errors.New("数据库未连接")
 	}
-	if err := db.AutoMigrate(&model.Counter{}); err != nil {
+	if err := renameAccountColumns(db); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(
+		&model.Counter{},
+		&model.Account{},
+		&model.Skill{},
+		&model.SkillDraft{},
+		&model.SkillVersion{},
+		&model.SkillToken{},
+		&model.SkillInstallation{},
+	); err != nil {
 		return err
 	}
 	var row model.Counter
@@ -108,4 +119,45 @@ func OpenIsolated() (*gorm.DB, func() error, error) {
 		return errors.Join(Close(db), os.RemoveAll(dir))
 	}
 	return db, cleanup, nil
+}
+
+func renameAccountColumns(db *gorm.DB) error {
+	if !db.Migrator().HasTable("accounts") {
+		return nil
+	}
+	columns, err := sqliteColumns(db, "accounts")
+	if err != nil {
+		return err
+	}
+	if columns["handle"] && !columns["user_id"] {
+		if err := db.Exec("ALTER TABLE accounts RENAME COLUMN handle TO user_id").Error; err != nil {
+			return err
+		}
+	}
+	if columns["display_name"] && !columns["nickname"] {
+		if err := db.Exec("ALTER TABLE accounts RENAME COLUMN display_name TO nickname").Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func sqliteColumns(db *gorm.DB, table string) (map[string]bool, error) {
+	rows, err := db.Raw("PRAGMA table_info(" + table + ")").Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	columns := map[string]bool{}
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notNull, pk int
+		var defaultValue any
+		if err := rows.Scan(&cid, &name, &ctype, &notNull, &defaultValue, &pk); err != nil {
+			return nil, err
+		}
+		columns[name] = true
+	}
+	return columns, rows.Err()
 }

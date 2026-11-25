@@ -15,6 +15,7 @@
 - 公共前端：React + Vite + TypeScript + Tailwind CSS v4 + BoldKit
 - 管理端：React + Vite + Ant Design + `@ant-design/pro-components`
 - 后端：Go + Gin + GORM + SQLite
+- 账号控制台在公共前端，组件沿用 neobrutalism：粗边框、硬阴影、按下位移
 - 部署：一个 Linux 二进制，SSH 上传后由 systemd 启动
 
 开发时前后端分开运行。部署时 `go:embed` 把两套前端打进同一个二进制。数据库是进程旁边的 SQLite 文件。
@@ -64,7 +65,7 @@ make admin-dev
 
 - 公共前端：`http://localhost:3000/`
 - 管理端：`http://localhost:5173/admin/`
-- Go 服务：`http://localhost:8888/`
+- Go 服务：`http://127.0.0.1:8888/`
 - 健康检查：`http://localhost:8888/healthz`
 
 两个 Vite 开发服务器都会将 `/api` 和 `/healthz` 通过同源代理转发到 `http://127.0.0.1:8888`，因此本地开发不需要给 Gin 添加 CORS 白名单，也不需要额外的前端 `.env` 文件。启动 Go 服务后，再分别运行 `make web-dev` 和 `make admin-dev` 即可。
@@ -80,10 +81,46 @@ POST /api/woodfish
 POST /api/admin/login
 GET  /api/admin/session
 POST /api/admin/logout
+POST /api/accounts/register
+POST /api/accounts/login
+POST /api/accounts/logout
+GET  /api/accounts/session
+GET  /api/skills
+POST /api/skills
+GET  /api/skills/<name>
+POST /api/skills/<name>/draft
+POST /api/skills/<name>/upload
+POST /api/skills/<name>/publish
+GET  /api/skills/<name>/versions
+POST /api/skills/<name>/rollback
+GET  /api/token
+POST /api/token/reset
+GET  /api/installations
+POST /api/installations
 GET  /registry/skills.json
 GET  /registry/skills/<name>/manifest.json
 GET  /registry/skills/<name>/<文件路径>
+GET  /.well-known/agent-skills/index.json
+GET  /.well-known/agent-skills/<name>.zip
+GET  /skills/<name>/.well-known/agent-skills/index.json
+GET  /<user-id>
+GET  /<user-id>/skills/<name>/manifest.json
+GET  /<user-id>/skills/<name>/<文件路径>
+GET  /<user-id>/skills/<name>/<contentHash>/<文件路径>
 ```
+
+公共技能页面仍是 `/skills/<name>`。`/skill/<name>` 会跳到新地址。个人主页是 `/<user-id>`，技能列表是 `/<user-id>/skills`。私有文件没有登录会话或有效访问令牌时返回和文件不存在一样的 404，并带 `Cache-Control: private, no-store`。每个技能只保留最近 10 个发布版本。
+
+客户端同步：
+
+```bash
+cd server
+go run ./cmd/skill-sync -url http://127.0.0.1:8888/<user-id>/skills/<name>/g/<token> -dest /目标项目/skills/<name>
+```
+
+公开技能把地址换成 `http://127.0.0.1:8888/skills/<name>`。
+
+本地文件和上次安装不一致时不会覆盖。确认后加 `-force`，原目录会先备份。
 
 `GET /api/woodfish` 返回木鱼被敲过的总次数，`POST /api/woodfish` 把次数加一。次数存在 SQLite 里。参观管理端的账号和密码写死为 `admin` / `admin123`，不在公共页面展示，也不能在页面里修改。
 
@@ -110,7 +147,7 @@ SQLITE_PATH=data/app.db
 ENCRYPTION_KEY=replace-with-a-long-random-key
 ```
 
-`SQLITE_PATH` 相对进程工作目录。本机 `make server-dev` 的工作目录是 `server/`。监听地址固定为 `:8888`。`ENCRYPTION_KEY` 用来给管理端会话签名。
+`SQLITE_PATH` 相对进程工作目录。本机 `make server-dev` 的工作目录是 `server/`。监听地址固定为 `127.0.0.1:8888`。`ENCRYPTION_KEY` 用来给管理端会话签名。
 
 ## 部署
 
@@ -128,4 +165,4 @@ deploy/deploy.sh user@host
 
 默认目录是 `/opt/food4agent`。换目录时设置 `DEPLOY_DIR`，只允许字母、数字、斜线和短横线。SSH 用户是 root，或者能 `sudo`。
 
-服务器上第一次部署会生成 `/opt/food4agent/env` 和空的 SQLite 文件，之后更新只替换二进制，不覆盖数据库和 `env`。systemd 服务名是 `food4agent`。进程监听 `:8888`。反向代理指向服务器的 `127.0.0.1:8888`。
+在本机构建前端，用 `go:embed` 打进一个 Linux 二进制，再上传到服务器。服务器上只有这一个进程，没有单独的前端或数据库服务。第一次部署会生成 `/opt/food4agent/env` 和空的 SQLite 文件，之后更新只替换二进制，不覆盖数据库和 `env`。systemd 服务名是 `food4agent`。进程只监听 `127.0.0.1:8888`。域名和 HTTPS 由上层反向代理指到这个地址。

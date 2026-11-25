@@ -8,8 +8,8 @@ export interface HeroCenteredProps {
   title: string;
   titleHighlight?: string;
   description: string;
-  primaryAction?: { label: string; href?: string; onClick?: () => void };
-  secondaryAction?: { label: string; href?: string; onClick?: () => void };
+  primaryAction?: { label: string; href?: string; onClick?: (event: { preventDefault(): void }) => void };
+  secondaryAction?: { label: string; href?: string; onClick?: (event: { preventDefault(): void }) => void };
   className?: string;
 }
 
@@ -23,7 +23,7 @@ export function HeroCentered({
   className,
 }: HeroCenteredProps) {
   return (
-    <section className={cn("px-4 py-20 md:px-8 lg:px-16", className)}>
+    <section className={cn("px-4 py-20 md:px-8", className)}>
       <div className="mx-auto max-w-4xl space-y-8 text-center">
         {badge && (
           <Badge variant="outline" className="px-4 py-1 text-sm">
@@ -32,7 +32,7 @@ export function HeroCentered({
           </Badge>
         )}
 
-        <h1 className="text-4xl font-black uppercase tracking-tight md:text-5xl lg:text-6xl">
+        <h1 className="text-4xl font-black tracking-tight md:text-5xl lg:text-6xl">
           {title}{" "}
           {titleHighlight && <span className="inline-block bg-primary px-2 text-primary-foreground">{titleHighlight}</span>}
         </h1>
@@ -44,7 +44,7 @@ export function HeroCentered({
             {primaryAction &&
               (primaryAction.href ? (
                 <Button size="lg" asChild>
-                  <a href={safeHref(primaryAction.href)}>
+                  <a href={safeHref(primaryAction.href)} onClick={primaryAction.onClick}>
                     {primaryAction.label}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </a>
@@ -58,7 +58,7 @@ export function HeroCentered({
             {secondaryAction &&
               (secondaryAction.href ? (
                 <Button size="lg" variant="outline" asChild>
-                  <a href={safeHref(secondaryAction.href)}>{secondaryAction.label}</a>
+                  <a href={safeHref(secondaryAction.href)} onClick={secondaryAction.onClick}>{secondaryAction.label}</a>
                 </Button>
               ) : (
                 <Button size="lg" variant="outline" onClick={secondaryAction.onClick}>

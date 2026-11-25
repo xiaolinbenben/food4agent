@@ -21,6 +21,7 @@ case $arch in
     ;;
 esac
 
+echo "本地构建前端并打进 Linux 二进制 ($arch)"
 GOARCH="$arch" make linux-build
 artifact="server/bin/food4agent-linux-$arch"
 test -f "$artifact"
@@ -29,6 +30,7 @@ unit=$(mktemp)
 sed "s#__DIR__#$dir#g" deploy/food4agent.service > "$unit"
 trap 'rm -f "$unit"' EXIT
 
+echo "上传到 $host:$dir"
 scp "$artifact" "$host:/tmp/food4agent-server"
 scp "$unit" "$host:/tmp/food4agent.service"
 scp deploy/install-remote.sh "$host:/tmp/food4agent-install.sh"
@@ -38,3 +40,5 @@ if ssh "$host" '[ "$(id -u)" -eq 0 ]'; then
 else
   ssh -t "$host" "sudo sh /tmp/food4agent-install.sh '$dir'"
 fi
+
+echo "服务已在服务器本机 127.0.0.1:8888 运行。把域名反代到这个地址即可。"

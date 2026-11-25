@@ -1,6 +1,7 @@
 package database
 
 import (
+	"path/filepath"
 	"testing"
 
 	"food4agent/apps/server/internal/model"
@@ -59,5 +60,37 @@ func TestMigrateAndReadBack(t *testing.T) {
 	}
 	if got.Count != 3 {
 		t.Fatalf("count = %d, want 3", got.Count)
+	}
+}
+
+func TestRenameAccountColumns(t *testing.T) {
+	db, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = Close(db) })
+	if err := db.Exec(`CREATE TABLE accounts (
+		id integer primary key,
+		handle text not null,
+		display_name text not null,
+		avatar_url text not null default '',
+		password_hash text not null,
+		created_at datetime,
+		updated_at datetime
+	)`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(`INSERT INTO accounts (handle, display_name, avatar_url, password_hash) VALUES ('lzq', '林', '', 'hash')`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := Migrate(db); err != nil {
+		t.Fatal(err)
+	}
+	var account model.Account
+	if err := db.Where("user_id = ?", "lzq").First(&account).Error; err != nil {
+		t.Fatal(err)
+	}
+	if account.Nickname != "林" || account.Email != "" {
+		t.Fatalf("account = %+v", account)
 	}
 }

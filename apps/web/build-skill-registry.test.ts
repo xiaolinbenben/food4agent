@@ -33,6 +33,15 @@ test("publishes tracked skill files with a content version", (t) => {
   assert.equal(index.skills[0].version, manifest.version);
   assert.equal(index.skills[0].file_count, 2);
   assert.match(index.skills[0].updated_at, /^\d{4}-/);
+  assert.match(index.skills[0].digest, /^sha256:[a-f0-9]{64}$/);
+  const discovery = JSON.parse(fs.readFileSync(path.join(out, "skills/alpha/.well-known/agent-skills/index.json"), "utf8"));
+  assert.equal(discovery.skills[0].digest, index.skills[0].digest);
+  assert.equal(discovery.skills[0].url, "/.well-known/agent-skills/alpha.zip");
+  const site = JSON.parse(fs.readFileSync(path.join(out, ".well-known/agent-skills/index.json"), "utf8"));
+  assert.equal(site.skills.length, 1);
+  const archive = fs.readFileSync(path.join(out, ".well-known/agent-skills/alpha.zip"));
+  assert.equal(archive.subarray(0, 2).toString("utf8"), "PK");
+  assert.ok(archive.includes(Buffer.from("print(1)\n")));
 
   fs.writeFileSync(path.join(skillDir, "scripts/run.py"), "print(2)\n");
   git("add", "skills/alpha/scripts/run.py");

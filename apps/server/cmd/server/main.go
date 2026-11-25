@@ -16,7 +16,7 @@ import (
 	webassets "food4agent/apps/server/web"
 )
 
-var listenAddr = ":8888"
+var listenAddr = "127.0.0.1:8888"
 
 func main() {
 	cfg, err := config.Load(listenAddr)

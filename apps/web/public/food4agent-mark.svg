@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360" role="img" aria-labelledby="title desc">
+  <title id="title">food4agent mark</title>
+  <desc id="desc">A neobrutalist bento box with four filled compartments, an agent face and an antenna.</desc>
+
+  <!-- ink #111111, butter #F7D447, coral #FF6B5F, cream #FFF9EC -->
+  <defs>
+    <clipPath id="tray-clip">
+      <rect x="63" y="109" width="180" height="142" rx="20"/>
+    </clipPath>
+  </defs>
+
+  <!-- hard offset shadow -->
+  <rect x="26" y="26" width="312" height="312" rx="50" fill="#111111"/>
+  <!-- badge -->
+  <rect x="8" y="8" width="312" height="312" rx="50" fill="#F7D447" stroke="#111111" stroke-width="12"/>
+
+  <!-- antenna -->
+  <path d="M156 82V50" fill="none" stroke="#111111" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="156" cy="36" r="16" fill="#FF6B5F" stroke="#111111" stroke-width="9"/>
+
+  <!-- bento tray shadow and frame -->
+  <rect x="70" y="116" width="190" height="152" rx="26" fill="#111111"/>
+  <rect x="58" y="104" width="190" height="152" rx="26" fill="#FFF9EC" stroke="#111111" stroke-width="10"/>
+
+  <!-- compartment fills reach the inner edge of the frame -->
+  <g clip-path="url(#tray-clip)">
+    <rect x="63" y="109" width="90" height="68" fill="#FF6B5F"/>
+    <rect x="153" y="109" width="90" height="68" fill="#111111"/>
+    <rect x="63" y="177" width="90" height="74" fill="#FFF9EC"/>
+    <rect x="153" y="177" width="90" height="74" fill="#FF6B5F"/>
+  </g>
+
+  <!-- dividers are drawn over the fills -->
+  <path d="M153 106V254M61 172H245" fill="none" stroke="#111111" stroke-width="10" stroke-linecap="square"/>
+
+  <!-- agent face -->
+  <circle cx="178" cy="137" r="10" fill="#FFF9EC" stroke="#111111" stroke-width="5"/>
+  <circle cx="211" cy="137" r="10" fill="#FFF9EC" stroke="#111111" stroke-width="5"/>
+  <path d="M185 158H204" fill="none" stroke="#FFF9EC" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- food marks -->
+  <path d="M84 126l14 14m0-14-14 14" fill="none" stroke="#111111" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="106" cy="210" r="11" fill="#F7D447" stroke="#111111" stroke-width="5"/>
+  <path d="M182 209h20" fill="none" stroke="#111111" stroke-width="7" stroke-linecap="round"/>
+</svg>
