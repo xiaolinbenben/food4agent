@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd)
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/read-codex-bearer.sh"
+
 MODEL='gpt-image-2'
 prompt=''
 api_key=''
@@ -16,8 +20,13 @@ usage() {
 Usage:
   /bin/bash invoke-image.sh --prompt <text> [options]
 
+The bearer token is read from experimental_bearer_token in Codex config.toml.
+macOS: $HOME/.codex/config.toml
+Windows: %USERPROFILE%\.codex\config.toml via invoke-image.ps1
+CODEX_HOME/config.toml overrides the directory on both platforms.
+Do not pass an API key and do not ask the user for one.
+
 Options:
-  --api-key <value>         Required API key; not read from config
   --reference-image <path>  Local reference image; repeat up to 16 times
   --size <value>            auto or WIDTHxHEIGHT (default: 1024x1024)
   --quality <value>         auto, low, medium, or high (default: auto)
@@ -40,10 +49,9 @@ while [[ $# -gt 0 ]]; do
       usage
       exit 0
       ;;
-    --api-key)
-      require_value "$@"
-      api_key=$2
-      shift 2
+    --api-key|--api-key=*)
+      echo 'Error: Do not pass --api-key. The script reads experimental_bearer_token from Codex config.toml. Do not ask the user for an API key.' >&2
+      exit 1
       ;;
     --prompt)
       require_value "$@"
@@ -86,8 +94,17 @@ if [[ -z "${prompt//[[:space:]]/}" ]]; then
   echo 'Error: --prompt must not be empty' >&2
   exit 1
 fi
+case "$(uname -s 2>/dev/null || true)" in
+  MINGW*|MSYS*|CYGWIN*)
+    echo 'Error: On Windows, run scripts/invoke-image.ps1 with PowerShell. invoke-image.sh is the macOS script.' >&2
+    exit 1
+    ;;
+esac
+if ! api_key=$(load_codex_bearer_token); then
+  exit 1
+fi
 if [[ -z "${api_key//[[:space:]]/}" ]]; then
-  echo 'Error: --api-key must not be empty' >&2
+  echo 'Error: experimental_bearer_token is empty. Do not ask the user for an API key.' >&2
   exit 1
 fi
 if [[ ! "$size" =~ ^(auto|[0-9]{2,5}x[0-9]{2,5})$ ]]; then
@@ -181,8 +198,11 @@ request_file="$temp_dir/request.json"
 response_file="$temp_dir/response.json"
 base64_file="$temp_dir/image.base64"
 decoded_file="$temp_dir/generated.$output_extension"
+auth_header_file="$temp_dir/authorization.header"
+printf 'Authorization: Bearer %s\n' "$api_key" > "$auth_header_file"
+/bin/chmod 600 "$auth_header_file"
 cleanup() {
-  /bin/rm -f "$request_file" "$response_file" "$base64_file" "$decoded_file"
+  /bin/rm -f "$request_file" "$response_file" "$base64_file" "$decoded_file" "$auth_header_file"
   /bin/rmdir "$temp_dir" 2>/dev/null || true
 }
 trap cleanup EXIT
@@ -205,7 +225,7 @@ JXA
   http_status=$(/usr/bin/curl -sS -o "$response_file" -w '%{http_code}' \
     --max-time "$timeout_seconds" \
     -X POST "$base_url/images/generations" \
-    -H "Authorization: Bearer $api_key" \
+    -H @"$auth_header_file" \
     -H 'Content-Type: application/json' \
     --data-binary "@$request_file")
   curl_status=$?
@@ -218,7 +238,7 @@ else
     -w '%{http_code}'
     --max-time "$timeout_seconds"
     -X POST "$base_url/images/edits"
-    -H "Authorization: Bearer $api_key"
+    -H @"$auth_header_file"
     --form-string "model=$MODEL"
     --form-string "prompt=$prompt"
     --form-string "size=$size"

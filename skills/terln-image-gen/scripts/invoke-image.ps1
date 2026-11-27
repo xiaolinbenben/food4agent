@@ -3,8 +3,7 @@ param(
   [Parameter(Mandatory = $true)]
   [string] $Prompt,
 
-  [Parameter(Mandatory = $true)]
-  [string] $ApiKey,
+  [string] $ApiKey = '',
 
   [ValidatePattern('^(auto|[0-9]{2,5}x[0-9]{2,5})$')]
   [string] $Size = '1024x1024',
@@ -22,6 +21,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$ScriptRoot = $PSScriptRoot
+if ([string]::IsNullOrWhiteSpace($ScriptRoot)) {
+  $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+}
+. (Join-Path $ScriptRoot 'read-codex-bearer.ps1')
 $Model = 'gpt-image-2'
 $SupportedReferenceExtensions = @('.png', '.jpg', '.jpeg', '.webp')
 $ProxyEnvKeys = @('HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'ALL_PROXY', 'all_proxy')
@@ -279,11 +283,15 @@ function Save-ImageResult {
 }
 
 try {
+  if (-not [string]::IsNullOrWhiteSpace($ApiKey)) {
+    throw 'Do not pass -ApiKey. The script reads experimental_bearer_token from Codex config.toml. Do not ask the user for an API key.'
+  }
   if ([string]::IsNullOrWhiteSpace($Prompt)) {
     throw 'Prompt must not be empty'
   }
+  $ApiKey = Get-CodexBearerToken
   if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-    throw 'API key must not be empty'
+    throw 'experimental_bearer_token is empty. Do not ask the user for an API key.'
   }
 
   $referenceFiles = @(Resolve-ReferenceFiles -Paths $ReferenceImage)
