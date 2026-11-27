@@ -22,6 +22,8 @@ func registerAccountRoutes(engine *gin.Engine, api *API) {
 	engine.GET("/api/skills", api.listSkills)
 	engine.POST("/api/skills", api.createSkill)
 	engine.GET("/api/skills/:name", api.skillDetail)
+	engine.PATCH("/api/skills/:name", api.updateSkill)
+	engine.DELETE("/api/skills/:name", api.deleteSkill)
 	engine.POST("/api/skills/:name/draft", api.saveDraft)
 	engine.POST("/api/skills/:name/upload", api.uploadSkill)
 	engine.POST("/api/skills/:name/publish", api.publishSkill)

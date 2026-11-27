@@ -14,6 +14,10 @@ type Dir struct {
 	Root string
 }
 
+func (d Dir) Skill(ownerID, skillID uint) string {
+	return filepath.Join(d.Root, itoa(ownerID), itoa(skillID))
+}
+
 func (d Dir) Draft(ownerID, skillID uint) string {
 	return filepath.Join(d.Root, itoa(ownerID), itoa(skillID), "draft")
 }

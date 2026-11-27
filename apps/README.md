@@ -88,6 +88,8 @@ GET  /api/accounts/session
 GET  /api/skills
 POST /api/skills
 GET  /api/skills/<name>
+PATCH /api/skills/<name>
+DELETE /api/skills/<name>
 POST /api/skills/<name>/draft
 POST /api/skills/<name>/upload
 POST /api/skills/<name>/publish
@@ -109,7 +111,7 @@ GET  /<user-id>/skills/<name>/<文件路径>
 GET  /<user-id>/skills/<name>/<contentHash>/<文件路径>
 ```
 
-公共技能页面仍是 `/skills/<name>`。`/skill/<name>` 会跳到新地址。个人主页是 `/<user-id>`，技能列表是 `/<user-id>/skills`。私有文件没有登录会话或有效访问令牌时返回和文件不存在一样的 404，并带 `Cache-Control: private, no-store`。每个技能只保留最近 10 个发布版本。
+公共技能页面仍是 `/skills/<name>`。`/skill/<name>` 会跳到新地址。个人主页是 `/<user-id>`，技能列表是 `/<user-id>/skills`。账号技能和收录技能使用同一套详情。账号技能默认未分类，也可以新建只属于这个账号的分类。未分类不显示分类标签。私有文件没有登录会话或有效访问令牌时返回和文件不存在一样的 404，并带 `Cache-Control: private, no-store`。每个技能只保留最近 10 个发布版本。
 
 客户端同步：
 

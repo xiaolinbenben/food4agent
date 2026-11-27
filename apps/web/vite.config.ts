@@ -3,7 +3,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { readSkillCatalog } from "./read-skill-catalog";
-import { buildSkillRegistry } from "./build-skill-registry";
+import { buildSkillRegistry, readRegistryAsset } from "./build-skill-registry";
 import { parseConsolePath } from "./src/console/paths";
 
 const repoRoot = path.resolve(__dirname, "../..");
@@ -26,6 +26,31 @@ function food4agentSkills(): Plugin {
     configResolved(config) {
       outDir = path.resolve(config.root, config.build.outDir);
       isBuild = config.command === "build";
+    },
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const pathname = decodeURIComponent((req.url ?? "").split("?")[0] ?? "");
+        if (!pathname.startsWith("/registry/skills/")) {
+          next();
+          return;
+        }
+        try {
+          const asset = readRegistryAsset(repoRoot, pathname);
+          if (!asset) {
+            res.statusCode = 404;
+            res.setHeader("Content-Type", "text/plain; charset=utf-8");
+            res.end("not found");
+            return;
+          }
+          res.setHeader("Content-Type", asset.type);
+          res.setHeader("Cache-Control", "no-cache");
+          res.end(asset.body);
+        } catch {
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end("not found");
+        }
+      });
     },
     closeBundle() {
       if (!isBuild) return;

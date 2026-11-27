@@ -14,6 +14,12 @@ import (
 
 func testHandler(t *testing.T) http.Handler {
 	t.Helper()
+	handler, _ := testApp(t)
+	return handler
+}
+
+func testApp(t *testing.T) (http.Handler, string) {
+	t.Helper()
 	dir := t.TempDir()
 	db, err := database.Open(filepath.Join(dir, "test.db"))
 	if err != nil {
@@ -27,6 +33,7 @@ func testHandler(t *testing.T) http.Handler {
 			t.Errorf("关闭测试库失败: %v", err)
 		}
 	})
+	root := filepath.Join(dir, "skills")
 	webFS := fstest.MapFS{
 		"public/index.html":                          &fstest.MapFile{Data: []byte("<html>public</html>")},
 		"public/assets/app.js":                       &fstest.MapFile{Data: []byte("console.log('app')")},
@@ -34,7 +41,7 @@ func testHandler(t *testing.T) http.Handler {
 		"public/.well-known/agent-skills/index.json": &fstest.MapFile{Data: []byte("{\"skills\":[]}")},
 		"admin/index.html":                           &fstest.MapFile{Data: []byte("<html>admin</html>")},
 	}
-	return New(config.Config{Addr: ":8000", DatabasePath: filepath.Join(dir, "test.db"), SkillRoot: filepath.Join(dir, "skills"), EncryptionKey: "test-key"}, db, webFS)
+	return New(config.Config{Addr: ":8000", DatabasePath: filepath.Join(dir, "test.db"), SkillRoot: root, EncryptionKey: "test-key"}, db, webFS), root
 }
 
 func TestHealthz(t *testing.T) {

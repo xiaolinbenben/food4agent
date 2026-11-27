@@ -1,13 +1,19 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Search, X } from "lucide-react";
+import { SkillCategoryNav, catalogHref } from "@/components/skill-category-nav";
 import { SkillCopyButton } from "@/components/skill-copy-button";
+import { SkillView } from "@/components/skill-view";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { badgeVariants } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { SiteHeader } from "@/components/brand-logo";
+import { categories } from "@/catalog";
 import {
   createSkill,
+  deleteSkill,
   fetchManifest,
   fetchSkill,
   fetchSkills,
@@ -20,6 +26,7 @@ import {
   resetToken,
   rollbackSkill,
   saveDraft,
+  updateSkill,
   uploadZip,
   type PublicManifest,
   type SkillChange,
@@ -62,9 +69,9 @@ function useOwner(userId: string) {
   return session;
 }
 
-function Crumbs({ userId, items }: { userId: string; items: { href?: string; label: string }[] }) {
+function Crumbs({ userId, items, className = "mb-1" }: { userId: string; items: { href?: string; label: string }[]; className?: string }) {
   return (
-    <nav aria-label="路径" className="mb-1 flex flex-wrap items-center gap-2 text-sm font-bold uppercase tracking-widest">
+    <nav aria-label="路径" className={`${className} flex flex-wrap items-center gap-2 text-sm font-bold uppercase tracking-widest`}>
       {items.length > 0 ? <a className="underline underline-offset-4" href={`/${userId}`}>/{userId}</a> : <span>/{userId}</span>}
       {items.map((item, index) => {
         const current = index === items.length - 1;
@@ -219,6 +226,11 @@ function SkillListPage({ userId }: { userId: string }) {
   const [skills, setSkills] = useState<SkillSummary[]>([]);
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
+  const params = new URLSearchParams(window.location.search);
+  const requestedCategory = params.get("category");
+  const query = (params.get("q") ?? "").trim();
+  const terms = query.toLocaleLowerCase().split(/\s+/).filter(Boolean);
+  const pathname = `/${userId}/skills`;
 
   useEffect(() => {
     if (session.status !== "in" || session.account?.user_id !== userId) return;
@@ -232,6 +244,29 @@ function SkillListPage({ userId }: { userId: string }) {
 
   if (session.status !== "in" || !session.account) return <p className="font-bold">加载中</p>;
   if (session.account.user_id !== userId) return <WrongAccount userId={session.account.user_id} />;
+
+  const presetIDs = new Set(categories.map((item) => item.id));
+  const counts = new Map<string, { label: string; count: number }>();
+  for (const skill of skills) {
+    if (!categoryLabel(skill.category_id, skill.category_label)) continue;
+    const current = counts.get(skill.category_id) ?? { label: skill.category_label || skill.category_id, count: 0 };
+    current.count += 1;
+    counts.set(skill.category_id, current);
+  }
+  const categoryOptions = [
+    { id: "", label: "全部", count: skills.length },
+    ...categories.flatMap((item) => {
+      const count = counts.get(item.id)?.count ?? 0;
+      return count > 0 ? [{ id: item.id, label: item.label, count }] : [];
+    }),
+    ...[...counts.entries()].filter(([id]) => !presetIDs.has(id)).map(([id, item]) => ({ id, label: item.label, count: item.count })),
+  ];
+  const knownCategory = !requestedCategory || presetIDs.has(requestedCategory) || counts.has(requestedCategory);
+  const filtered = knownCategory ? skills.filter((skill) => {
+    if (requestedCategory && skill.category_id !== requestedCategory) return false;
+    const text = `${skill.name} ${skill.display_name} ${skill.description}`.toLocaleLowerCase();
+    return terms.every((term) => text.includes(term));
+  }) : [];
 
   function installURL(skill: SkillSummary) {
     const page = `${window.location.origin}/${userId}/skills/${skill.name}`;
@@ -250,31 +285,47 @@ function SkillListPage({ userId }: { userId: string }) {
     <div className="space-y-6">
       <PageHead userId={userId} items={[{ label: "技能" }]} title="技能" actions={<a className={buttonVariants()} href={`/${userId}/skills/new`}>新建 Skill</a>} />
       {error && <ErrorText>{error}</ErrorText>}
-      <div className="grid gap-6">
-        {skills.length === 0 && <p className="border-3 border-foreground bg-card p-6 shadow-[4px_4px_0px_hsl(var(--shadow-color))]">还没有 Skill。</p>}
-        {skills.map((skill) => (
-          <Card key={skill.name}>
-            <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:justify-between md:p-6">
-              <div className="min-w-0 space-y-3">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  <CardTitle className="min-w-0 normal-case leading-snug">
-                    <a className="hover:underline" href={`/${userId}/skills/${skill.name}`}>{skill.display_name || skill.name}</a>
-                  </CardTitle>
-                  <Tag>{skill.visibility === "public" ? "公开" : "私有"}</Tag>
-                  <Tag>{shortHash(skill.current_content_hash)}</Tag>
-                  <Tag>{formatTime(skill.updated_at)}</Tag>
-                  {skill.dirty && <Tag draft>草稿</Tag>}
-                </div>
-                <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{skill.description || skill.name}</p>
-              </div>
-              <div className="flex shrink-0 flex-wrap gap-3">
-                <SkillCopyButton size="sm" url={installURL(skill)} onCopy={(value) => copySkill(skill, value)} />
-                <a className={buttonVariants({ variant: "outline", size: "sm" })} href={`/${userId}/skills/${skill.name}/edit`}>编辑</a>
-              </div>
-            </div>
-          </Card>
-        ))}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
+        <form role="search" action={pathname} method="get" className="flex w-full shrink-0 gap-2 md:w-96">
+          {requestedCategory !== null && <input type="hidden" name="category" value={requestedCategory} />}
+          <input type="search" name="q" aria-label="搜索 Skill" placeholder="搜索名称或简介" defaultValue={query} className="h-11 min-w-0 flex-1 border-3 border-foreground bg-card px-3 text-sm shadow-[4px_4px_0px_hsl(var(--shadow-color))] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+          <Button type="submit" size="icon" className="shrink-0" aria-label="搜索"><Search /></Button>
+          {query && <Button variant="outline" size="icon" className="shrink-0" asChild><a href={catalogHref(pathname, 1, requestedCategory ?? "")} aria-label="清除搜索"><X /></a></Button>}
+        </form>
       </div>
+      <SkillCategoryNav options={categoryOptions} pathname={pathname} selectedId={knownCategory ? requestedCategory ?? "" : null} query={query} />
+      {!knownCategory ? (
+        <div className="space-y-4 border-3 border-foreground bg-muted p-6">
+          <p>没有找到分类“{requestedCategory}”。</p>
+          <Button asChild><a href={pathname}>返回全部技能</a></Button>
+        </div>
+      ) : filtered.length === 0 ? <p className="border-3 border-foreground bg-card p-6 shadow-[4px_4px_0px_hsl(var(--shadow-color))]">{skills.length === 0 ? "还没有 Skill。" : "没有找到匹配的技能。"}</p> : (
+        <div className="grid gap-6">
+          {filtered.map((skill) => (
+            <Card key={skill.name}>
+              <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:justify-between md:p-6">
+                <div className="min-w-0 space-y-3">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <CardTitle className="min-w-0 normal-case leading-snug">
+                      <a className="hover:underline" href={`/${userId}/skills/${skill.name}`}>{skill.display_name || skill.name}</a>
+                    </CardTitle>
+                    {categoryLabel(skill.category_id, skill.category_label) && <a href={catalogHref(pathname, 1, skill.category_id, query)} className={badgeVariants({ variant: "outline" })}>{categoryLabel(skill.category_id, skill.category_label)}</a>}
+                    <Tag>{skill.visibility === "public" ? "公开" : "私有"}</Tag>
+                    <Tag>{shortHash(skill.current_content_hash)}</Tag>
+                    <Tag>{formatTime(skill.updated_at)}</Tag>
+                    {skill.dirty && <Tag draft>草稿</Tag>}
+                  </div>
+                  <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{skill.description || skill.name}</p>
+                </div>
+                <div className="flex shrink-0 flex-wrap gap-3">
+                  <SkillCopyButton size="sm" url={installURL(skill)} onCopy={(value) => copySkill(skill, value)} />
+                  <a className={buttonVariants({ variant: "outline", size: "sm" })} href={`/${userId}/skills/${skill.name}/edit`}>编辑</a>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -340,68 +391,87 @@ function NewSkillPage({ userId }: { userId: string }) {
   );
 }
 
+function categoryLabel(id: string, label: string) {
+  if (!id || !label || id === "未分类" || label === "未分类") return "";
+  return label;
+}
+
+function accountInstallURL(userId: string, name: string, visibility: string, token: string) {
+  const page = `${window.location.origin}/${userId}/skills/${name}`;
+  return visibility === "private" ? `${page}/g/${token}` : page;
+}
+
 function SkillDetailPage({ userId, name, token }: { userId: string; name: string; token: string }) {
   const session = useSession();
-  const [detail, setDetail] = useState<SkillDetail | null>(null);
-  const [manifest, setManifest] = useState<PublicManifest | null>(null);
+  const [info, setInfo] = useState<SkillSummary | null>(null);
+  const [manifest, setManifest] = useState<PublicManifest | null | undefined>(undefined);
+  const [accessToken, setAccessToken] = useState(token);
   const [missing, setMissing] = useState(false);
+  const owner = session.account?.user_id === userId;
 
   useEffect(() => {
     if (session.status === "loading") return;
     let cancelled = false;
     async function load() {
       try {
-        if (session.account?.user_id === userId) {
-          const next = await fetchSkill(name);
-          if (!cancelled) setDetail(next);
+        if (owner || token) {
+          const detail = await fetchSkill(name, owner ? "" : token);
+          if (cancelled) return;
+          setInfo(detail.skill);
+          let pageToken = token;
+          if (owner && detail.skill.visibility === "private") {
+            pageToken = (await fetchToken()).token;
+            if (!cancelled) setAccessToken(pageToken);
+          }
+          try {
+            const published = await fetchManifest(userId, name, pageToken);
+            if (!cancelled) setManifest(published);
+          } catch {
+            if (!cancelled) setManifest(null);
+          }
           return;
         }
-        if (token) {
-          const next = await fetchSkill(name, token);
-          if (!cancelled) setDetail(next);
-          return;
-        }
-        const next = await fetchManifest(userId, name);
-        if (!cancelled) setManifest(next);
+        const published = await fetchManifest(userId, name);
+        if (cancelled) return;
+        setManifest(published);
+        setInfo({
+          name: published.name,
+          display_name: published.display_name || published.name,
+          description: published.description || "",
+          category_id: published.category_id || "",
+          category_label: published.category_label || published.category_id || "",
+          visibility: "public",
+          current_content_hash: "",
+          version: published.version,
+          dirty: false,
+          updated_at: "",
+        });
       } catch {
         if (!cancelled) setMissing(true);
       }
     }
     void load();
     return () => { cancelled = true; };
-  }, [session, userId, name, token]);
+  }, [session.status, owner, userId, name, token]);
 
   if (missing) return <MissingSkill />;
-  if (!detail && !manifest) return <p className="font-bold">加载中</p>;
-  const owned = detail !== null;
-  const files = owned ? detail.files : manifest?.files ?? [];
-  const version = owned ? detail.skill.version : manifest?.version ?? "";
+  if (!info || (manifest === undefined && !missing)) return <p className="font-bold">加载中</p>;
+  const root = token ? `/${userId}/skills/${name}/g/${encodeURIComponent(token)}` : `/${userId}/skills/${name}`;
+  const files = (manifest?.files ?? []).map((file) => ({ path: file.path, size: file.size, href: `${root}/${file.path}` }));
+  const installURL = info.visibility === "private" && !accessToken ? "" : accountInstallURL(userId, name, info.visibility, accessToken);
   return (
-    <div className="space-y-6">
-      <PageHead
-        userId={userId}
-        items={[{ href: `/${userId}/skills`, label: "技能" }, { label: name }]}
-        title={owned ? detail.skill.display_name : name}
-        actions={session.account?.user_id === userId ? <a className={buttonVariants()} href={`/${userId}/skills/${name}/edit`}>编辑草稿</a> : undefined}
-      />
-      <p className="text-muted-foreground">{owned ? detail.skill.description : "公开技能"}</p>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-center gap-2">
-            <CardTitle className="normal-case">文件</CardTitle>
-            <Tag>{shortHash(version)}</Tag>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {files.map((file) => {
-            const root = token ? `/${userId}/skills/${name}/g/${encodeURIComponent(token)}` : `/${userId}/skills/${name}`;
-            const href = `${root}/${file.path}`;
-            return <p key={file.path} className="font-mono text-sm" style={{ paddingLeft: `${fileDepth(file.path) * 16}px` }}><a className="underline" href={href}>{file.path}</a> · {file.size} 字节</p>;
-          })}
-          <p className="break-all text-sm"><a className="underline" href={`${token ? `/${userId}/skills/${name}/g/${encodeURIComponent(token)}` : `/${userId}/skills/${name}`}/manifest.json`}>manifest.json</a></p>
-        </CardContent>
-      </Card>
-    </div>
+    <SkillView
+      leading={<Crumbs className="" userId={userId} items={[{ href: `/${userId}/skills`, label: "技能" }, { label: name }]} />}
+      title={info.display_name || name}
+      category={categoryLabel(info.category_id, info.category_label) ? { href: catalogHref(`/${userId}/skills`, 1, info.category_id), label: categoryLabel(info.category_id, info.category_label) } : undefined}
+      description={info.description}
+      actions={owner ? <a className={buttonVariants()} href={`/${userId}/skills/${name}/edit`}>编辑草稿</a> : undefined}
+      installURL={installURL}
+      version={manifest?.version || info.version}
+      files={files}
+      filesStatus={manifest ? "ready" : "missing"}
+      manifestHref={manifest ? `${root}/manifest.json` : undefined}
+    />
   );
 }
 
@@ -411,9 +481,17 @@ function SkillEditorPage({ userId, name }: { userId: string; name: string }) {
   const [files, setFiles] = useState<SkillFile[]>([]);
   const [selected, setSelected] = useState("SKILL.md");
   const [newPath, setNewPath] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [description, setDescription] = useState("");
+  const [categoryID, setCategoryID] = useState("__none__");
+  const [newCategory, setNewCategory] = useState("");
+  const [visibility, setVisibility] = useState("private");
+  const [knownCategories, setKnownCategories] = useState<{ id: string; label: string }[]>([]);
+  const [confirmName, setConfirmName] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     if (session.status !== "in" || session.account?.user_id !== userId) return;
@@ -421,29 +499,72 @@ function SkillEditorPage({ userId, name }: { userId: string; name: string }) {
       setDetail(next);
       setFiles(next.files);
       setSelected(next.files[0]?.path ?? "SKILL.md");
+      setDisplayName(next.skill.display_name);
+      setDescription(next.skill.description);
+      setCategoryID(next.skill.category_id || "__none__");
+      setVisibility(next.skill.visibility);
     }).catch((caught) => setError(caught instanceof Error ? caught.message : "加载失败"));
+    fetchSkills().then((result) => {
+      const map = new Map<string, string>();
+      for (const skill of result.skills) {
+        if (skill.category_id) map.set(skill.category_id, skill.category_label || skill.category_id);
+      }
+      setKnownCategories([...map].map(([id, label]) => ({ id, label })));
+    }).catch(() => undefined);
   }, [session, userId, name]);
 
   if (session.status !== "in" || !session.account) return <p className="font-bold">加载中</p>;
   if (session.account.user_id !== userId) return <WrongAccount userId={session.account.user_id} />;
   const current = files.find((file) => file.path === selected);
+  const categoryChoices = new Map<string, string>();
+  for (const item of categories) categoryChoices.set(item.id, item.label);
+  for (const item of knownCategories) categoryChoices.set(item.id, item.label);
+  if (detail?.skill.category_id) categoryChoices.set(detail.skill.category_id, detail.skill.category_label || detail.skill.category_id);
 
   function updateContent(content: string) {
     setFiles((items) => items.map((file) => file.path === selected ? { ...file, content } : file));
   }
 
   async function save() {
+    const category = categoryID === "__new__" ? newCategory.trim() : categoryID === "__none__" ? "未分类" : categoryID;
+    if (categoryID === "__new__" && !category) {
+      setError("请填写分类");
+      return;
+    }
     setBusy(true);
     setError("");
     setMessage("");
     try {
+      await updateSkill(name, { display_name: displayName, description, category, visibility });
       const next = await saveDraft(name, files);
       setDetail(next);
       setFiles(next.files);
+      setDisplayName(next.skill.display_name);
+      setDescription(next.skill.description);
+      setCategoryID(next.skill.category_id || "__none__");
+      setNewCategory("");
+      setVisibility(next.skill.visibility);
+      if (next.skill.category_id) {
+        setKnownCategories((items) => items.some((item) => item.id === next.skill.category_id) ? items : [...items, { id: next.skill.category_id, label: next.skill.category_label }]);
+      }
       setMessage("草稿已保存");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "保存失败");
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeSkill() {
+    if (confirmName !== name) return;
+    setBusy(true);
+    setError("");
+    try {
+      await deleteSkill(name);
+      window.location.href = `/${userId}/skills`;
+    } catch (caught) {
+      dialogRef.current?.close();
+      setError(caught instanceof Error ? caught.message : "删除失败");
       setBusy(false);
     }
   }
@@ -453,7 +574,7 @@ function SkillEditorPage({ userId, name }: { userId: string; name: string }) {
       <PageHead userId={userId} items={[{ href: `/${userId}/skills`, label: "技能" }, { href: `/${userId}/skills/${name}`, label: name }, { label: "编辑" }]} title={name} />
       {error && <ErrorText>{error}</ErrorText>}
       {message && <p className="font-bold">{message}</p>}
-      <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_280px] lg:items-start">
+      <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_320px] lg:items-start">
         <section className="space-y-3 border-3 border-foreground bg-card p-4 shadow-[4px_4px_0px_hsl(var(--shadow-color))]">
           <h2 className="font-black uppercase">文件</h2>
           <div className="flex flex-col gap-2">
@@ -485,30 +606,73 @@ function SkillEditorPage({ userId, name }: { userId: string; name: string }) {
               }).catch((caught) => setError(caught instanceof Error ? caught.message : "上传失败")).finally(() => setBusy(false));
             }} />
           </label>
+          <a className={buttonVariants({ variant: "secondary", className: "w-full" })} href={`/${userId}/skills/${name}/versions`}>历史版本</a>
         </section>
 
         <section className="min-w-0 space-y-3 border-3 border-foreground bg-card p-4 shadow-[4px_4px_0px_hsl(var(--shadow-color))]">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-black uppercase">{selected || "未选择文件"}</h2>
-            {current && <Button variant="destructive" size="sm" onClick={() => setFiles((items) => items.filter((file) => file.path !== selected))}>删除</Button>}
+            {current && <Button variant="destructive" size="sm" onClick={() => setFiles((items) => items.filter((file) => file.path !== selected))}>删除文件</Button>}
           </div>
           {!current && <p>选择一个文件。</p>}
           {current?.binary && <p>这是二进制文件，用 ZIP 替换。</p>}
           {current && !current.binary && <Textarea className="min-h-[70vh] font-mono" value={current.content ?? ""} onChange={(event) => updateContent(event.target.value)} />}
         </section>
 
-        <aside className="space-y-3 border-3 border-foreground bg-card p-4 text-sm shadow-[4px_4px_0px_hsl(var(--shadow-color))]">
-          <h2 className="font-black uppercase">操作</h2>
-          <Button className="w-full" variant="outline" disabled={busy} onClick={() => void save()}>保存草稿</Button>
-          <a className={buttonVariants({ variant: "secondary", className: "w-full" })} href={`/${userId}/skills/${name}/versions`}>版本</a>
-          <a className={buttonVariants({ className: "w-full" })} href={`/${userId}/skills/${name}/releases/new`}>发布版本</a>
-          <p>可见性 {detail?.skill.visibility === "public" ? "公开" : "私有"}</p>
-          <p>当前版本 {shortHash(detail?.skill.current_content_hash ?? "")}</p>
-          <p>{files.some((file) => file.path === "SKILL.md") ? "已有 SKILL.md" : "缺少 SKILL.md"}</p>
-          <ChangeList changes={detail?.changes ?? []} />
-          <p className="text-muted-foreground">已发布的版本不能直接改。保存只会进草稿。每个技能只保留最近 10 个版本。</p>
+        <aside className="space-y-4 border-3 border-foreground bg-card p-4 text-sm shadow-[4px_4px_0px_hsl(var(--shadow-color))]">
+          <section className="space-y-3">
+            <h2 className="font-black uppercase">技能信息</h2>
+            <label className="block space-y-2 font-bold uppercase">
+              <span>名称</span>
+              <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+            </label>
+            <label className="block space-y-2 font-bold uppercase">
+              <span>简介</span>
+              <Textarea className="min-h-24" value={description} onChange={(event) => setDescription(event.target.value)} />
+            </label>
+            <label className="block space-y-2 font-bold uppercase">
+              <span>分类</span>
+              <Select value={categoryID} onValueChange={setCategoryID}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">未分类</SelectItem>
+                  {[...categoryChoices].map(([id, label]) => <SelectItem key={id} value={id}>{label}</SelectItem>)}
+                  <SelectItem value="__new__">新建分类</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            {categoryID === "__new__" && <Input value={newCategory} placeholder="分类名称" onChange={(event) => setNewCategory(event.target.value)} />}
+            <label className="block space-y-2 font-bold uppercase">
+              <span>可见性</span>
+              <Select value={visibility} onValueChange={setVisibility}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="private">私有</SelectItem>
+                  <SelectItem value="public">公开</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+          </section>
+          <section className="space-y-3 border-t-[3px] border-foreground pt-4">
+            <Button className="w-full" variant="outline" disabled={busy} onClick={() => void save()}>保存草稿</Button>
+            <a className={buttonVariants({ className: "w-full" })} href={`/${userId}/skills/${name}/releases/new`}>发布版本</a>
+            <p className="text-muted-foreground">分类和可见性保存后立即生效，Skill 内容需要保存后发布版本后生效。当前版本{shortHash(detail?.skill.current_content_hash ?? "")}</p>
+            <Button className="w-full" variant="destructive" disabled={busy} onClick={() => { setConfirmName(""); dialogRef.current?.showModal(); }}>删除</Button>
+            <p className="text-muted-foreground">删除后，安装地址、草稿和全部版本都会失效，不能恢复。</p>
+          </section>
         </aside>
       </div>
+      <dialog ref={dialogRef} className="w-[min(28rem,calc(100%-2rem))] border-3 border-foreground bg-card p-6 text-foreground shadow-[8px_8px_0px_hsl(var(--shadow-color))] backdrop:bg-black/40">
+        <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void removeSkill(); }}>
+          <h2 className="text-xl font-black">删除 {name}</h2>
+          <p>输入完整技能标识后才能删除。</p>
+          <Input value={confirmName} autoComplete="off" placeholder={name} onChange={(event) => setConfirmName(event.target.value)} />
+          <div className="flex flex-wrap gap-3">
+            <Button type="submit" variant="destructive" disabled={busy || confirmName !== name}>确认删除</Button>
+            <Button type="button" variant="outline" onClick={() => dialogRef.current?.close()}>取消</Button>
+          </div>
+        </form>
+      </dialog>
     </div>
   );
 }
@@ -527,8 +691,8 @@ function VersionsPage({ userId, name }: { userId: string; name: string }) {
     <div className="space-y-4">
       <PageHead
         userId={userId}
-        items={[{ href: `/${userId}/skills`, label: "技能" }, { href: `/${userId}/skills/${name}/edit`, label: name }, { label: "版本" }]}
-        title="版本"
+        items={[{ href: `/${userId}/skills`, label: "技能" }, { href: `/${userId}/skills/${name}/edit`, label: name }, { label: "历史版本" }]}
+        title="历史版本"
         actions={<a className={buttonVariants({ variant: "outline" })} href={`/${userId}`}>回到主页</a>}
       />
       {error && <ErrorText>{error}</ErrorText>}
@@ -610,12 +774,6 @@ function PublishPage({ userId, name }: { userId: string; name: string }) {
       {error && <ErrorText>{error}</ErrorText>}
     </div>
   );
-}
-
-function ChangeList({ changes }: { changes: SkillChange[] }) {
-  if (changes.length === 0) return <p className="text-sm">和当前发布没有差异。</p>;
-  const label = { added: "新增", removed: "删除", modified: "修改" };
-  return <ul className="space-y-1 text-sm">{changes.map((change) => <li key={change.path}>{label[change.status]} {change.path}</li>)}</ul>;
 }
 
 function changeNotes(changes: SkillChange[]) {

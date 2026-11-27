@@ -45,6 +45,41 @@ func (a *API) createSkill(c *gin.Context) {
 	response.OK(c, detail)
 }
 
+func (a *API) updateSkill(c *gin.Context) {
+	account, ok := a.requireAccount(c)
+	if !ok {
+		return
+	}
+	var req struct {
+		DisplayName string `json:"display_name"`
+		Description string `json:"description"`
+		Category    string `json:"category"`
+		Visibility  string `json:"visibility"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "请求格式错误")
+		return
+	}
+	detail, err := a.skills.UpdateInfo(c.Request.Context(), account.ID, c.Param("name"), req.DisplayName, req.Description, req.Category, req.Visibility)
+	if err != nil {
+		a.fail(c, err)
+		return
+	}
+	response.OK(c, detail)
+}
+
+func (a *API) deleteSkill(c *gin.Context) {
+	account, ok := a.requireAccount(c)
+	if !ok {
+		return
+	}
+	if err := a.skills.Delete(c.Request.Context(), account.ID, c.Param("name")); err != nil {
+		a.fail(c, err)
+		return
+	}
+	response.OK(c, gin.H{})
+}
+
 func (a *API) skillDetail(c *gin.Context) {
 	ownerID, ok := a.readOwner(c)
 	if !ok {

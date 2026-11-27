@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"food4agent/apps/server/internal/model"
+	"food4agent/apps/server/internal/skillcategory"
 	"food4agent/apps/server/internal/skillfs"
 	"gorm.io/gorm"
 )
@@ -25,6 +26,8 @@ type SkillSummary struct {
 	Name               string    `json:"name"`
 	DisplayName        string    `json:"display_name"`
 	Description        string    `json:"description"`
+	CategoryID         string    `json:"category_id"`
+	CategoryLabel      string    `json:"category_label"`
 	Visibility         string    `json:"visibility"`
 	CurrentContentHash string    `json:"current_content_hash"`
 	Version            string    `json:"version"`
@@ -98,7 +101,7 @@ func (s SkillStore) Create(ctx context.Context, owner model.Account, name, displ
 		Description: description, Visibility: visibility,
 	}
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&skill).Error; err != nil {
+		if err := tx.Select("OwnerID", "Name", "DisplayName", "Description", "CategoryID", "Visibility", "CurrentContentHash").Create(&skill).Error; err != nil {
 			return err
 		}
 		draft := model.SkillDraft{SkillID: skill.ID, Files: "[]", Manifest: "{}", UpdatedBy: owner.ID}
@@ -152,6 +155,59 @@ func (s SkillStore) Detail(ctx context.Context, ownerID uint, name string) (Skil
 		return SkillDetail{}, err
 	}
 	return SkillDetail{Skill: summary, Files: views(files), Changes: changes(published, files)}, nil
+}
+
+func (s SkillStore) UpdateInfo(ctx context.Context, ownerID uint, name, displayName, description, category, visibility string) (SkillDetail, error) {
+	skill, err := s.owned(ctx, ownerID, name)
+	if err != nil {
+		return SkillDetail{}, err
+	}
+	displayName = cleanLine(displayName, 80)
+	if displayName == "" {
+		displayName = skill.Name
+	}
+	description = cleanLine(description, 280)
+	categoryID, err := skillcategory.Resolve(category)
+	if err != nil {
+		return SkillDetail{}, invalid(err.Error())
+	}
+	visibility, err = normalizeVisibility(visibility)
+	if err != nil {
+		return SkillDetail{}, err
+	}
+	err = s.db.WithContext(ctx).Model(&model.Skill{}).Where("id = ?", skill.ID).Updates(map[string]any{
+		"display_name": displayName,
+		"description":  description,
+		"category_id":  categoryID,
+		"visibility":   visibility,
+	}).Error
+	if err != nil {
+		return SkillDetail{}, err
+	}
+	return s.Detail(ctx, ownerID, skill.Name)
+}
+
+func (s SkillStore) Delete(ctx context.Context, ownerID uint, name string) error {
+	skill, err := s.owned(ctx, ownerID, name)
+	if err != nil {
+		return err
+	}
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("skill_id = ?", skill.ID).Delete(&model.SkillInstallation{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("skill_id = ?", skill.ID).Delete(&model.SkillVersion{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("skill_id = ?", skill.ID).Delete(&model.SkillDraft{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&model.Skill{}, skill.ID).Error
+	})
+	if err != nil {
+		return err
+	}
+	return s.files.Remove(s.files.Skill(skill.OwnerID, skill.ID))
 }
 
 func (s SkillStore) SaveDraft(ctx context.Context, ownerID uint, name string, inputs []DraftInput) (SkillDetail, error) {
@@ -535,6 +591,7 @@ func (s SkillStore) summary(ctx context.Context, skill model.Skill) (SkillSummar
 	}
 	return SkillSummary{
 		Name: skill.Name, DisplayName: skill.DisplayName, Description: skill.Description,
+		CategoryID: skill.CategoryID, CategoryLabel: skillcategory.Label(skill.CategoryID),
 		Visibility: skill.Visibility, CurrentContentHash: skill.CurrentContentHash,
 		Version: version, Dirty: hash != skill.CurrentContentHash, UpdatedAt: skill.UpdatedAt,
 	}, nil

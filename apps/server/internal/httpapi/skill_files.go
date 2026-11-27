@@ -1,10 +1,12 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 
 	"food4agent/apps/server/internal/model"
+	"food4agent/apps/server/internal/skillcategory"
 	"food4agent/apps/server/internal/skillfs"
 	"github.com/gin-gonic/gin"
 )
@@ -180,6 +182,9 @@ func (a *API) serveSkillFile(c *gin.Context, skill model.Skill, loc skillLocatio
 	if tokenID != 0 {
 		_ = a.tokens.Touch(c.Request.Context(), tokenID)
 	}
+	if loc.Hash == "" && loc.File == "manifest.json" {
+		data = presentManifest(data, skill)
+	}
 	private := skill.Visibility == model.VisibilityPrivate
 	switch {
 	case loc.Hash != "" && private:
@@ -193,6 +198,22 @@ func (a *API) serveSkillFile(c *gin.Context, skill model.Skill, loc skillLocatio
 	}
 	c.Header("X-Content-Type-Options", "nosniff")
 	c.Data(http.StatusOK, contentType(loc.File), data)
+}
+
+func presentManifest(data []byte, skill model.Skill) []byte {
+	var payload map[string]any
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return data
+	}
+	payload["display_name"] = skill.DisplayName
+	payload["description"] = skill.Description
+	payload["category_id"] = skill.CategoryID
+	payload["category_label"] = skillcategory.Label(skill.CategoryID)
+	next, err := json.Marshal(payload)
+	if err != nil {
+		return data
+	}
+	return next
 }
 
 func presentedToken(c *gin.Context) string {

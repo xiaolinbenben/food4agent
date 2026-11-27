@@ -1,6 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Copy, Search, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, Copy, Search, X } from "lucide-react";
+import { SkillCategoryNav, catalogHref } from "@/components/skill-category-nav";
 import { SkillCopyButton } from "@/components/skill-copy-button";
+import { SkillView } from "@/components/skill-view";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { badgeVariants } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -190,15 +192,6 @@ function requestedPage() {
   return Number.isSafeInteger(page) ? page : 1;
 }
 
-function catalogHref(pathname: string, page: number, categoryId = "", query = "") {
-  const params = new URLSearchParams();
-  if (categoryId) params.set("category", categoryId);
-  if (query) params.set("q", query);
-  if (page > 1) params.set("page", String(page));
-  const search = params.toString();
-  return search ? `${pathname}?${search}` : pathname;
-}
-
 function pageSlice<T>(items: readonly T[], requested: number) {
   const total = items.length;
   const pageCount = Math.max(1, Math.ceil(total / catalogPageSize));
@@ -246,69 +239,6 @@ const categoryOptions = [
   ...categories.map((category) => ({ ...category, count: skills.filter((skill) => skill.categoryId === category.id).length })),
 ];
 
-function SkillCategoryNav({ selectedId, query }: { selectedId: string | null; query: string }) {
-  const containerRef = useRef<HTMLElement>(null);
-  const measureRef = useRef<HTMLDivElement>(null);
-  const [visibleCount, setVisibleCount] = useState(0);
-  const [expandedCount, setExpandedCount] = useState(0);
-
-  useLayoutEffect(() => {
-    const container = containerRef.current!;
-    const row = measureRef.current!;
-    const measure = () => {
-      const widths = Array.from(row.children, (element) => element.getBoundingClientRect().width);
-      const moreWidth = widths.pop()!;
-      const gap = parseFloat(getComputedStyle(row).columnGap);
-      const available = container.clientWidth - 4;
-      if (widths.reduce((sum, width) => sum + width, 0) + gap * (widths.length - 1) <= available) {
-        setVisibleCount(widths.length);
-        return;
-      }
-      let used = moreWidth;
-      let count = 0;
-      for (const width of widths) {
-        if (used + gap + width > available) break;
-        used += gap + width;
-        count += 1;
-      }
-      setVisibleCount(count);
-    };
-    const observer = new ResizeObserver(measure);
-    observer.observe(container);
-    observer.observe(row);
-    measure();
-    return () => observer.disconnect();
-  }, []);
-
-  const shownCount = Math.min(visibleCount + expandedCount, categoryOptions.length);
-  return (
-    <nav ref={containerRef} aria-label="技能分类" className="relative mb-6 flex flex-wrap items-center gap-3">
-      <div aria-hidden="true" className="pointer-events-none invisible absolute inset-0 overflow-hidden">
-        <div ref={measureRef} className="flex w-max gap-3">
-          {categoryOptions.map((item) => (
-            <span key={item.id} className={buttonVariants({ variant: "outline", size: "sm" })}>
-              {item.label}<span className="tabular-nums opacity-70">{item.count}</span>
-            </span>
-          ))}
-          <span className={buttonVariants({ variant: "outline", size: "sm" })}>更多<ChevronDown /></span>
-        </div>
-      </div>
-      {categoryOptions.slice(0, shownCount).map((item) => (
-        <Button key={item.id} size="sm" variant={selectedId === item.id ? "default" : "outline"} className="shrink-0" asChild>
-          <a href={catalogHref("/skills", 1, item.id, query)} aria-current={selectedId === item.id ? "page" : undefined}>
-            {item.label}<span className="tabular-nums opacity-70">{item.count}</span>
-          </a>
-        </Button>
-      ))}
-      {shownCount < categoryOptions.length && (
-        <Button size="sm" variant={categoryOptions.slice(shownCount).some((item) => item.id === selectedId) ? "default" : "outline"} className="shrink-0" onClick={() => setExpandedCount((count) => count + 10)}>
-          更多<ChevronDown />
-        </Button>
-      )}
-    </nav>
-  );
-}
-
 function SkillCatalog() {
   const params = new URLSearchParams(window.location.search);
   const requestedCategory = params.get("category");
@@ -337,7 +267,7 @@ function SkillCatalog() {
           </div>
           <p className="max-w-3xl text-muted-foreground">收录的公共技能。复制安装命令即可。自己的技能在个人主页。</p>
         </div>
-        <SkillCategoryNav selectedId={invalidCategory ? null : category?.id ?? ""} query={query} />
+        <SkillCategoryNav options={categoryOptions} pathname="/skills" selectedId={invalidCategory ? null : category?.id ?? ""} query={query} />
         {invalidCategory ? (
           <div className="space-y-4 border-3 border-foreground bg-muted p-6">
             <p>没有找到分类“{requestedCategory}”。请选择上方分类，或返回全部技能。</p>
@@ -364,10 +294,6 @@ function SkillCatalog() {
   );
 }
 
-function skillInstallCommand(url: string) {
-  return `npx skills add ${url}`;
-}
-
 function SkillCategoryLink({ categoryId, query = "" }: { categoryId: string; query?: string }) {
   const category = categories.find((item) => item.id === categoryId)!;
   return (
@@ -378,31 +304,32 @@ function SkillCategoryLink({ categoryId, query = "" }: { categoryId: string; que
 }
 
 function SkillPage({ skill }: { skill: SkillEntry }) {
-  const url = siteSkillUrl(skill.name);
-  const command = skillInstallCommand(url);
+  const [manifest, setManifest] = useState<{ version: string; files: { path: string; size: number }[] } | null | undefined>(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/registry/skills/${encodeURIComponent(skill.name)}/manifest.json`)
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => { if (!cancelled) setManifest(data); })
+      .catch(() => { if (!cancelled) setManifest(null); });
+    return () => { cancelled = true; };
+  }, [skill.name]);
+  const category = categories.find((item) => item.id === skill.categoryId);
+  const root = `/registry/skills/${skill.name}`;
   return (
-    <section className="px-4 py-16 [overflow-wrap:anywhere] md:px-8">
-      <div className="mx-auto w-full max-w-[1440px] space-y-8">
-        <div className="space-y-3">
-          <p className="text-sm font-bold uppercase tracking-widest text-primary">
-            <a href="/skills">全部技能</a>
-          </p>
-          <h1 className="text-3xl font-black tracking-tight md:text-5xl">{skill.name}</h1>
-          <SkillCategoryLink categoryId={skill.categoryId} />
-          <p className="max-w-3xl text-muted-foreground">{skill.summary}</p>
-        </div>
-        <Card>
-          <CardHeader>
-            <CardDescription>npx skills add</CardDescription>
-            <CardTitle className="normal-case">安装命令</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <pre className="min-w-0 flex-1 overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{command}</pre>
-              <SkillCopyButton url={url} />
-            </div>
-          </CardContent>
-        </Card>
+    <section className="px-4 py-16 md:px-8">
+      <div className="mx-auto w-full max-w-[1440px]">
+        <SkillView
+          leading={<p className="text-sm font-bold uppercase tracking-widest text-primary"><a href="/skills">全部技能</a></p>}
+          title={skill.name}
+          category={category ? { href: catalogHref("/skills", 1, category.id), label: category.label } : undefined}
+          description={skill.summary}
+          installURL={siteSkillUrl(skill.name)}
+          version={manifest?.version ?? ""}
+          files={(manifest?.files ?? []).map((file) => ({ path: file.path, size: file.size, href: `${root}/${file.path}` }))}
+          filesStatus={manifest === undefined ? "loading" : manifest ? "ready" : "missing"}
+          manifestHref={manifest ? `${root}/manifest.json` : undefined}
+          emptyLabel="文件暂时读不到。"
+        />
       </div>
     </section>
   );

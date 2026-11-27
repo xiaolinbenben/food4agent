@@ -156,3 +156,42 @@ export function buildSkillRegistry(
   }));
   return { count: entries.length, totalBytes };
 }
+
+const trackedSkills = new Map<string, { at: number; files: Map<string, string[]> }>();
+
+function trackedSkillFiles(repoRoot: string) {
+  const cached = trackedSkills.get(repoRoot);
+  if (cached && Date.now() - cached.at < 2000) return cached.files;
+  const files = listSkillFiles(repoRoot);
+  trackedSkills.set(repoRoot, { at: Date.now(), files });
+  return files;
+}
+
+function registryType(rel: string) {
+  if (rel.endsWith(".json")) return "application/json; charset=utf-8";
+  if (rel.endsWith(".md")) return "text/markdown; charset=utf-8";
+  if (/\.(py|txt|ts|js|sh|yml|yaml)$/.test(rel)) return "text/plain; charset=utf-8";
+  return "application/octet-stream";
+}
+
+export function readRegistryAsset(repoRoot: string, requestPath: string): { body: Buffer; type: string } | null {
+  const prefix = "/registry/skills/";
+  if (!requestPath.startsWith(prefix)) return null;
+  const rest = requestPath.slice(prefix.length);
+  if (!rest || rest.split("/").some((part) => part === "" || part === "." || part === "..")) return null;
+  const slash = rest.indexOf("/");
+  const name = slash === -1 ? rest : rest.slice(0, slash);
+  const rel = slash === -1 ? "" : rest.slice(slash + 1);
+  const files = trackedSkillFiles(repoRoot).get(name);
+  if (!files) return null;
+  if (rel === "manifest.json") {
+    const manifestFiles = files.map((file) => {
+      const content = fs.readFileSync(path.join(repoRoot, "skills", name, file));
+      return { path: file, sha256: crypto.createHash("sha256").update(content).digest("hex"), size: content.length };
+    });
+    const manifest: RegistryManifest = { name, version: skillVersion(manifestFiles), files: manifestFiles };
+    return { body: Buffer.from(JSON.stringify(manifest)), type: "application/json; charset=utf-8" };
+  }
+  if (!files.includes(rel)) return null;
+  return { body: fs.readFileSync(path.join(repoRoot, "skills", name, rel)), type: registryType(rel) };
+}

@@ -31,6 +31,7 @@ type Skill struct {
 	Name               string `gorm:"size:32;not null;uniqueIndex:owner_skill_name"`
 	DisplayName        string `gorm:"size:80;not null"`
 	Description        string `gorm:"size:280;not null"`
+	CategoryID         string `gorm:"size:160;not null;default:''"`
 	Visibility         string `gorm:"size:16;not null"`
 	CurrentContentHash string `gorm:"size:64;not null"`
 	CreatedAt          time.Time

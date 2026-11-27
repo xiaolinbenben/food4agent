@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { buildSkillRegistry } from "./build-skill-registry.ts";
+import { buildSkillRegistry, readRegistryAsset } from "./build-skill-registry.ts";
 
 test("publishes tracked skill files with a content version", (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "food4agent-registry-"));
@@ -27,6 +27,11 @@ test("publishes tracked skill files with a content version", (t) => {
   const manifest = JSON.parse(fs.readFileSync(path.join(out, "registry/skills/alpha/manifest.json"), "utf8"));
   assert.deepEqual(manifest.files.map((file: { path: string }) => file.path), ["SKILL.md", "scripts/run.py"]);
   assert.equal(fs.readFileSync(path.join(out, "registry/skills/alpha/scripts/run.py"), "utf8"), "print(1)\n");
+  const served = readRegistryAsset(root, "/registry/skills/alpha/manifest.json");
+  assert.equal(JSON.parse(served?.body.toString() ?? "{}").version, manifest.version);
+  assert.equal(readRegistryAsset(root, "/registry/skills/alpha/scripts/run.py")?.body.toString(), "print(1)\n");
+  assert.equal(readRegistryAsset(root, "/registry/skills/alpha/.gitignore"), null);
+  assert.equal(readRegistryAsset(root, "/registry/skills/alpha/../alpha/SKILL.md"), null);
   assert.equal(fs.existsSync(path.join(out, "registry/skills/alpha/.gitignore")), false);
 
   const index = JSON.parse(fs.readFileSync(path.join(out, "registry/skills.json"), "utf8"));

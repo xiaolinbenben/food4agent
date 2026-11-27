@@ -12,6 +12,8 @@ export type SkillSummary = {
   name: string;
   display_name: string;
   description: string;
+  category_id: string;
+  category_label: string;
   visibility: "public" | "private";
   current_content_hash: string;
   version: string;
@@ -79,6 +81,18 @@ export function fetchSkill(name: string, token = ""): Promise<SkillDetail> {
   return request(`/api/skills/${name}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
 }
 
+export function updateSkill(name: string, input: { display_name: string; description: string; category: string; visibility: string }): Promise<SkillDetail> {
+  return request(`/api/skills/${name}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteSkill(name: string): Promise<Record<string, never>> {
+  return request(`/api/skills/${name}`, { method: "DELETE" });
+}
+
 export function createSkill(input: { name: string; display_name: string; description: string; visibility: string; file?: File }): Promise<SkillDetail> {
   if (input.file) {
     const body = new FormData();
@@ -143,6 +157,10 @@ export function resetToken(): Promise<{ token: string }> {
 export type PublicManifest = {
   name: string;
   version: string;
+  display_name?: string;
+  description?: string;
+  category_id?: string;
+  category_label?: string;
   files: { path: string; sha256: string; size: number }[];
 };
 

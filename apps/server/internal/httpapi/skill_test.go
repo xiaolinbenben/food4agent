@@ -6,9 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -175,6 +178,96 @@ func TestReservedHandleAndLegacySkillRedirect(t *testing.T) {
 	}
 }
 
+func TestSkillInfoCategoryVisibilityAndDelete(t *testing.T) {
+	handler, root := testApp(t)
+	acme := registerAccount(t, handler, "acme", "password-acme")
+	other := registerAccount(t, handler, "other", "password-other")
+	createSkill(t, handler, acme, "product-search", "private")
+
+	created := skillPayload(t, callJSON(handler, http.MethodGet, "/api/skills/product-search", "", acme))
+	if created.CategoryID != "" || created.CategoryLabel != "" {
+		t.Fatalf("default category = %s %s", created.CategoryID, created.CategoryLabel)
+	}
+	cleared := skillPayload(t, callJSON(handler, http.MethodPatch, "/api/skills/product-search", `{"display_name":"选品","description":"找货","category":"未分类","visibility":"private"}`, acme))
+	if cleared.CategoryID != "" || cleared.CategoryLabel != "" {
+		t.Fatalf("uncategorized = %s %s", cleared.CategoryID, cleared.CategoryLabel)
+	}
+	publishSkill(t, handler, acme, "product-search")
+	before := getSkillFile(t, handler, "/acme/skills/product-search/SKILL.md", acme)
+	if before.Code != http.StatusOK {
+		t.Fatalf("published status = %d", before.Code)
+	}
+	anonymous := getSkillFile(t, handler, "/acme/skills/product-search/SKILL.md", "")
+	if anonymous.Code != http.StatusNotFound {
+		t.Fatalf("private anonymous status = %d", anonymous.Code)
+	}
+
+	updated := skillPayload(t, callJSON(handler, http.MethodPatch, "/api/skills/product-search", `{"display_name":"选品","description":"找货","category":" 电商运营 ","visibility":"public"}`, acme))
+	if updated.CategoryID != "ecommerce" || updated.CategoryLabel != "电商运营" || updated.DisplayName != "选品" || updated.Visibility != "public" {
+		t.Fatalf("preset update = %+v", updated)
+	}
+	publicFile := getSkillFile(t, handler, "/acme/skills/product-search/SKILL.md", "")
+	if publicFile.Code != http.StatusOK || publicFile.Body.String() != before.Body.String() {
+		t.Fatalf("visibility change rewrote file: status %d", publicFile.Code)
+	}
+	manifest := getSkillFile(t, handler, "/acme/skills/product-search/manifest.json", "")
+	if manifest.Code != http.StatusOK || !strings.Contains(manifest.Body.String(), `"category_id":"ecommerce"`) || !strings.Contains(manifest.Body.String(), "选品") {
+		t.Fatalf("manifest = %s", manifest.Body.String())
+	}
+
+	custom := skillPayload(t, callJSON(handler, http.MethodPatch, "/api/skills/product-search", `{"display_name":"选品","description":"找货","category":"内部资料","visibility":"private"}`, acme))
+	if custom.CategoryID != "内部资料" || custom.CategoryLabel != "内部资料" || custom.Visibility != "private" {
+		t.Fatalf("custom category = %+v", custom)
+	}
+	if hidden := getSkillFile(t, handler, "/acme/skills/product-search/SKILL.md", ""); hidden.Code != http.StatusNotFound {
+		t.Fatalf("private again status = %d", hidden.Code)
+	}
+	listed := callJSON(handler, http.MethodGet, "/api/skills", "", acme)
+	if !strings.Contains(listed.Body.String(), "内部资料") {
+		t.Fatalf("list = %s", listed.Body.String())
+	}
+	otherList := callJSON(handler, http.MethodGet, "/api/skills", "", other)
+	if strings.Contains(otherList.Body.String(), "内部资料") {
+		t.Fatalf("other account saw the category: %s", otherList.Body.String())
+	}
+
+	slug := skillPayload(t, callJSON(handler, http.MethodPatch, "/api/skills/product-search", `{"display_name":"选品","description":"找货","category":"my-tools","visibility":"public"}`, acme))
+	if slug.CategoryID != "my-tools" || slug.CategoryLabel != "my-tools" {
+		t.Fatalf("slug category = %+v", slug)
+	}
+
+	removed := callJSON(handler, http.MethodDelete, "/api/skills/product-search", "", acme)
+	if removed.Code != http.StatusOK {
+		t.Fatalf("delete status = %d body = %s", removed.Code, removed.Body.String())
+	}
+	if gone := getSkillFile(t, handler, "/acme/skills/product-search/SKILL.md", acme); gone.Code != http.StatusNotFound {
+		t.Fatalf("deleted file status = %d", gone.Code)
+	}
+	if detail := callJSON(handler, http.MethodGet, "/api/skills/product-search", "", acme); detail.Code != http.StatusNotFound {
+		t.Fatalf("deleted detail status = %d", detail.Code)
+	}
+	foundFile := false
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			if os.IsNotExist(walkErr) {
+				return nil
+			}
+			return walkErr
+		}
+		if entry.Name() == "SKILL.md" {
+			foundFile = true
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if foundFile {
+		t.Fatal("skill files remained after delete")
+	}
+	createSkill(t, handler, acme, "product-search", "public")
+}
+
 func registerAccount(t *testing.T, handler http.Handler, handle, password string) string {
 	t.Helper()
 	recorder := httptest.NewRecorder()
@@ -272,8 +365,12 @@ func jsonNumber(value uint) string {
 }
 
 func postJSON(handler http.Handler, path, body, cookie string) *httptest.ResponseRecorder {
+	return callJSON(handler, http.MethodPost, path, body, cookie)
+}
+
+func callJSON(handler http.Handler, method, path, body, cookie string) *httptest.ResponseRecorder {
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
+	request := httptest.NewRequest(method, path, strings.NewReader(body))
 	request.Header.Set("Content-Type", "application/json")
 	if strings.HasPrefix(cookie, "Bearer ") {
 		request.Header.Set("Authorization", cookie)
@@ -282,6 +379,31 @@ func postJSON(handler http.Handler, path, body, cookie string) *httptest.Respons
 	}
 	handler.ServeHTTP(recorder, request)
 	return recorder
+}
+
+type skillInfo struct {
+	Name          string `json:"name"`
+	DisplayName   string `json:"display_name"`
+	Description   string `json:"description"`
+	CategoryID    string `json:"category_id"`
+	CategoryLabel string `json:"category_label"`
+	Visibility    string `json:"visibility"`
+}
+
+func skillPayload(t *testing.T, recorder *httptest.ResponseRecorder) skillInfo {
+	t.Helper()
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", recorder.Code, recorder.Body.String())
+	}
+	var payload struct {
+		Data struct {
+			Skill skillInfo `json:"skill"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	return payload.Data.Skill
 }
 
 func getSkillFile(t *testing.T, handler http.Handler, path, auth string) *httptest.ResponseRecorder {
