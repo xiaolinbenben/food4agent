@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { SkillCopyButton } from "@/components/skill-copy-button";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -217,9 +218,7 @@ function SkillListPage({ userId }: { userId: string }) {
   const session = useOwner(userId);
   const [skills, setSkills] = useState<SkillSummary[]>([]);
   const [token, setToken] = useState("");
-  const [copied, setCopied] = useState("");
   const [error, setError] = useState("");
-  const [copyMode, setCopyMode] = useState<CopyMode>(readCopyMode);
 
   useEffect(() => {
     if (session.status !== "in" || session.account?.user_id !== userId) return;
@@ -234,24 +233,17 @@ function SkillListPage({ userId }: { userId: string }) {
   if (session.status !== "in" || !session.account) return <p className="font-bold">加载中</p>;
   if (session.account.user_id !== userId) return <WrongAccount userId={session.account.user_id} />;
 
-  async function copy(key: string, value: string) {
-    await copyText(value);
-    setCopied(key);
-  }
-
   function installURL(skill: SkillSummary) {
     const page = `${window.location.origin}/${userId}/skills/${skill.name}`;
     return skill.visibility === "private" ? `${page}/g/${token}` : page;
   }
 
-  function copySkill(skill: SkillSummary, mode: CopyMode) {
+  async function copySkill(skill: SkillSummary, value: string) {
     if (skill.visibility === "private" && !token) {
       setError("令牌还没加载");
-      return;
+      return false;
     }
-    localStorage.setItem(copyModeKey, mode);
-    setCopyMode(mode);
-    void copy(skill.name, copyModes[mode].text(installURL(skill)));
+    await copyText(value);
   }
 
   return (
@@ -276,7 +268,7 @@ function SkillListPage({ userId }: { userId: string }) {
                 <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{skill.description || skill.name}</p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-3">
-                <SkillCopyButton copied={copied === skill.name} mode={copyMode} onCopy={(mode) => copySkill(skill, mode)} />
+                <SkillCopyButton size="sm" url={installURL(skill)} onCopy={(value) => copySkill(skill, value)} />
                 <a className={buttonVariants({ variant: "outline", size: "sm" })} href={`/${userId}/skills/${skill.name}/edit`}>编辑</a>
               </div>
             </div>
@@ -287,49 +279,6 @@ function SkillListPage({ userId }: { userId: string }) {
   );
 }
 
-
-const copyModeKey = "food4agent.skill-copy-mode";
-
-const copyModes = {
-  url: { label: "复制地址", text: (url: string) => url },
-  cli: { label: "复制安装命令", text: (url: string) => `npx skills add ${url}` },
-  prompt: { label: "复制安装口令", text: (url: string) => `帮我安装 ${url} 这个技能。` },
-} as const;
-
-const copyModeOrder = ["url", "cli", "prompt"] as const;
-
-type CopyMode = (typeof copyModeOrder)[number];
-
-function readCopyMode(): CopyMode {
-  const value = localStorage.getItem(copyModeKey);
-  if (value === "url" || value === "cli" || value === "prompt") return value;
-  return "url";
-}
-
-function SkillCopyButton({ copied, mode, onCopy }: { copied: boolean; mode: CopyMode; onCopy: (mode: CopyMode) => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
-      {open && (
-        <div className="absolute bottom-full right-0 z-30 pb-2">
-          <div className="min-w-max border-3 border-foreground bg-background shadow-[4px_4px_0px_hsl(var(--shadow-color))]">
-            {copyModeOrder.map((id) => (
-              <button
-                key={id}
-                type="button"
-                className={`block w-full border-b-3 border-foreground px-3 py-2 text-left text-xs font-bold uppercase tracking-wide last:border-b-0 ${id === mode ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
-                onClick={() => onCopy(id)}
-              >
-                {copyModes[id].label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      <Button size="sm" onClick={() => onCopy(mode)}>{copied ? "已复制" : "复制"}</Button>
-    </div>
-  );
-}
 
 function NewSkillPage({ userId }: { userId: string }) {
   const session = useOwner(userId);
@@ -508,8 +457,8 @@ function SkillEditorPage({ userId, name }: { userId: string; name: string }) {
         <section className="space-y-3 border-3 border-foreground bg-card p-4 shadow-[4px_4px_0px_hsl(var(--shadow-color))]">
           <h2 className="font-black uppercase">文件</h2>
           <div className="flex flex-col gap-2">
-            {files.map((file) => (
-              <button key={file.path} type="button" style={{ paddingLeft: `${12 + fileDepth(file.path) * 16}px` }} className={`break-all border-3 border-foreground py-2 pr-3 text-left text-sm font-bold ${file.path === selected ? "bg-primary" : "bg-background"}`} onClick={() => setSelected(file.path)}>
+            {[...files].sort((a, b) => compareSkillPaths(a.path, b.path)).map((file) => (
+              <button key={file.path} type="button" style={{ marginLeft: fileDepth(file.path) * 16 }} className={`break-all border-3 border-foreground px-3 py-2 text-left text-sm font-bold ${file.path === selected ? "bg-primary" : "bg-background"}`} onClick={() => setSelected(file.path)}>
                 {file.path}
               </button>
             ))}
@@ -712,6 +661,20 @@ function Tag({ children, draft = false }: { children: string; draft?: boolean })
 
 function fileDepth(path: string) {
   return Math.max(0, path.split("/").filter(Boolean).length - 1);
+}
+
+function compareSkillPaths(a: string, b: string) {
+  const left = a.split("/").filter(Boolean);
+  const right = b.split("/").filter(Boolean);
+  const count = Math.min(left.length, right.length);
+  for (let i = 0; i < count; i++) {
+    const leftFile = i === left.length - 1;
+    const rightFile = i === right.length - 1;
+    if (leftFile !== rightFile) return leftFile ? -1 : 1;
+    const order = left[i].localeCompare(right[i], "zh", { numeric: true, sensitivity: "base" });
+    if (order !== 0) return order;
+  }
+  return left.length - right.length;
 }
 
 async function copyText(value: string) {

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Copy, Search, X } from "lucide-react";
+import { SkillCopyButton } from "@/components/skill-copy-button";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { badgeVariants } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,8 +59,8 @@ function PublicSite() {
       <SiteHeader />
       <main>
         {path === "/" && <Home />}
-        {path === "/skills" && <SkillCatalog copied={copied} onCopy={copyText} />}
-        {skill && <SkillPage skill={skill} copied={copied} onCopy={copyText} />}
+        {path === "/skills" && <SkillCatalog />}
+        {skill && <SkillPage skill={skill} />}
         {path === "/mcp" && <McpCatalog copied={copied} onCopy={copyText} />}
         {!known && <Missing />}
       </main>
@@ -308,7 +309,7 @@ function SkillCategoryNav({ selectedId, query }: { selectedId: string | null; qu
   );
 }
 
-function SkillCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string, value: string) => void }) {
+function SkillCatalog() {
   const params = new URLSearchParams(window.location.search);
   const requestedCategory = params.get("category");
   const query = (params.get("q") ?? "").trim();
@@ -349,7 +350,7 @@ function SkillCatalog({ copied, onCopy }: { copied: string; onCopy: (key: string
         ) : null}
         <div className="grid gap-4">
           {slice.items.map((skill) => (
-            <SkillCard key={skill.name} skill={skill} query={query} copied={copied} onCopy={onCopy} />
+            <SkillCard key={skill.name} skill={skill} query={query} />
           ))}
         </div>
         {!invalidCategory && (
@@ -376,7 +377,7 @@ function SkillCategoryLink({ categoryId, query = "" }: { categoryId: string; que
   );
 }
 
-function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: string; onCopy: (key: string, value: string) => void }) {
+function SkillPage({ skill }: { skill: SkillEntry }) {
   const url = siteSkillUrl(skill.name);
   const command = skillInstallCommand(url);
   return (
@@ -395,11 +396,10 @@ function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: strin
             <CardDescription>npx skills add</CardDescription>
             <CardTitle className="normal-case">安装命令</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{command}</pre>
-            <div className="flex flex-wrap gap-3">
-              <CopyButton outline copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
-              <CopyButton copied={copied === `${skill.name}:command`} label="复制安装命令" onClick={() => onCopy(`${skill.name}:command`, command)} />
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <pre className="min-w-0 flex-1 overflow-x-auto whitespace-pre-wrap break-all border-3 border-foreground bg-muted p-4 text-sm">{command}</pre>
+              <SkillCopyButton url={url} />
             </div>
           </CardContent>
         </Card>
@@ -408,9 +408,7 @@ function SkillPage({ skill, copied, onCopy }: { skill: SkillEntry; copied: strin
   );
 }
 
-function SkillCard({ skill, query, copied, onCopy }: { skill: SkillEntry; query: string; copied: string; onCopy: (key: string, value: string) => void }) {
-  const url = siteSkillUrl(skill.name);
-  const command = skillInstallCommand(url);
+function SkillCard({ skill, query }: { skill: SkillEntry; query: string }) {
   return (
     <Card id={skill.name}>
       <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:justify-between md:p-6">
@@ -423,10 +421,7 @@ function SkillCard({ skill, query, copied, onCopy }: { skill: SkillEntry; query:
           </div>
           <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{skill.summary}</p>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-3">
-          <CopyButton size="sm" outline copied={copied === skill.name} label="复制地址" onClick={() => onCopy(skill.name, url)} />
-          <CopyButton size="sm" copied={copied === `${skill.name}:command`} label="复制安装命令" onClick={() => onCopy(`${skill.name}:command`, command)} />
-        </div>
+        <SkillCopyButton size="sm" url={siteSkillUrl(skill.name)} />
       </div>
     </Card>
   );
