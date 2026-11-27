@@ -45,7 +45,7 @@ export function SkillView({
         <div className="flex min-w-0 flex-col gap-3">
           {leading}
           <h1 className="text-3xl font-black leading-none tracking-tight md:text-5xl">{title}</h1>
-          {category && <a href={category.href} className={badgeVariants({ variant: "outline" })}>{category.label}</a>}
+          {category && <a href={category.href} className={`${badgeVariants({ variant: "outline" })} w-fit`}>{category.label}</a>}
           {description ? <p className="max-w-3xl text-muted-foreground">{description}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
