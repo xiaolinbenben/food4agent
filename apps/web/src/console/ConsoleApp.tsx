@@ -285,7 +285,8 @@ function SkillListPage({ userId }: { userId: string }) {
     <div className="space-y-6">
       <PageHead userId={userId} items={[{ label: "技能" }]} title="技能" actions={<a className={buttonVariants()} href={`/${userId}/skills/new`}>新建 Skill</a>} />
       {error && <ErrorText>{error}</ErrorText>}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <SkillCategoryNav className="mb-0 min-w-0 flex-1" options={categoryOptions} pathname={pathname} selectedId={knownCategory ? requestedCategory ?? "" : null} query={query} />
         <form role="search" action={pathname} method="get" className="flex w-full shrink-0 gap-2 md:w-96">
           {requestedCategory !== null && <input type="hidden" name="category" value={requestedCategory} />}
           <input type="search" name="q" aria-label="搜索 Skill" placeholder="搜索名称或简介" defaultValue={query} className="h-11 min-w-0 flex-1 border-3 border-foreground bg-card px-3 text-sm shadow-[4px_4px_0px_hsl(var(--shadow-color))] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
@@ -293,7 +294,6 @@ function SkillListPage({ userId }: { userId: string }) {
           {query && <Button variant="outline" size="icon" className="shrink-0" asChild><a href={catalogHref(pathname, 1, requestedCategory ?? "")} aria-label="清除搜索"><X /></a></Button>}
         </form>
       </div>
-      <SkillCategoryNav options={categoryOptions} pathname={pathname} selectedId={knownCategory ? requestedCategory ?? "" : null} query={query} />
       {!knownCategory ? (
         <div className="space-y-4 border-3 border-foreground bg-muted p-6">
           <p>没有找到分类“{requestedCategory}”。</p>
@@ -662,7 +662,7 @@ function SkillEditorPage({ userId, name }: { userId: string; name: string }) {
           </section>
         </aside>
       </div>
-      <dialog ref={dialogRef} className="w-[min(28rem,calc(100%-2rem))] border-3 border-foreground bg-card p-6 text-foreground shadow-[8px_8px_0px_hsl(var(--shadow-color))] backdrop:bg-black/40">
+      <dialog ref={dialogRef} className="m-auto h-fit w-[min(28rem,calc(100%-2rem))] border-3 border-foreground bg-card p-6 text-foreground shadow-[8px_8px_0px_hsl(var(--shadow-color))] backdrop:bg-black/40">
         <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void removeSkill(); }}>
           <h2 className="text-xl font-black">删除 {name}</h2>
           <p>输入完整技能标识后才能删除。</p>

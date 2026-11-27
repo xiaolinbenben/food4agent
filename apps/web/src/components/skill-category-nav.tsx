@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export type SkillCategoryOption = { id: string; label: string; count: number };
 
@@ -13,7 +14,7 @@ export function catalogHref(pathname: string, page: number, categoryId = "", que
   return search ? `${pathname}?${search}` : pathname;
 }
 
-export function SkillCategoryNav({ options, pathname, selectedId, query }: { options: SkillCategoryOption[]; pathname: string; selectedId: string | null; query: string }) {
+export function SkillCategoryNav({ options, pathname, selectedId, query, className }: { options: SkillCategoryOption[]; pathname: string; selectedId: string | null; query: string; className?: string }) {
   const containerRef = useRef<HTMLElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(0);
@@ -50,7 +51,7 @@ export function SkillCategoryNav({ options, pathname, selectedId, query }: { opt
 
   const shownCount = Math.min(visibleCount + expandedCount, options.length);
   return (
-    <nav ref={containerRef} aria-label="技能分类" className="relative mb-6 flex flex-wrap items-center gap-3">
+    <nav ref={containerRef} aria-label="技能分类" className={cn("relative mb-6 flex flex-wrap items-center gap-3", className)}>
       <div aria-hidden="true" className="pointer-events-none invisible absolute inset-0 overflow-hidden">
         <div ref={measureRef} className="flex w-max gap-3">
           {options.map((item) => (
